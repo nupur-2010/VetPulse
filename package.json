@@ -1,0 +1,34 @@
+{
+  "name": "vetpulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-Powered Cattle Health Monitoring Platform",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@vetpulse/web",
+    "dev:api": "turbo dev --filter=@vetpulse/api",
+    "dev:ai": "turbo dev --filter=@vetpulse/ai-service",
+    "build": "turbo build",
+    "build:web": "turbo build --filter=@vetpulse/web",
+    "build:api": "turbo build --filter=@vetpulse/api",
+    "build:ai": "turbo build --filter=@vetpulse/ai-service",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,py,js}\"",
+    "db:migrate": "cd apps/api && npx prisma migrate dev",
+    "db:push": "cd apps/api && npx prisma db push",
+    "db:seed": "cd apps/api && npx prisma db seed",
+    "db:studio": "cd apps/api && npx prisma studio"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "prettier": "^3.1.0",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.0"
+  },
+  "packageManager": "npm@10.2.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=10.0.0"
+  }
+}
