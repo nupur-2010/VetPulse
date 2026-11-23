@@ -15,7 +15,14 @@ export class AuthController {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.login(req.body as LoginInput);
-      res.json({ success: true, data: result });
+      // Return user and tokens directly for frontend compatibility
+      res.json({
+        user: result.user,
+        accessToken: result.tokens.accessToken,
+        refreshToken: result.tokens.refreshToken,
+        farmerProfile: result.farmerProfile,
+        vetProfile: result.vetProfile,
+      });
     } catch (error) {
       next(error);
     }

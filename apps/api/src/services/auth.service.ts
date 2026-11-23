@@ -68,12 +68,17 @@ export class AuthService {
     return { user: authenticatedUser, tokens };
   }
 
-  async login(input: LoginInput): Promise<{ user: AuthenticatedUser; tokens: { accessToken: string; refreshToken: string } }> {
+  async login(input: LoginInput): Promise<{ 
+    user: AuthenticatedUser; 
+    tokens: { accessToken: string; refreshToken: string };
+    farmerProfile?: { id: string; firstName: string; lastName: string } | null;
+    vetProfile?: { id: string; firstName: string; specialization: string } | null;
+  }> {
     const user = await prisma.user.findUnique({
       where: { email: input.email },
       include: {
-        farmerProfile: { select: { id: true } },
-        vetProfile: { select: { id: true } },
+        farmerProfile: true,
+        vetProfile: true,
       },
     });
 
@@ -97,7 +102,20 @@ export class AuthService {
       vetProfileId: user.vetProfile?.id,
     };
 
-    return { user: authenticatedUser, tokens };
+    return { 
+      user: authenticatedUser, 
+      tokens,
+      farmerProfile: user.farmerProfile ? {
+        id: user.farmerProfile.id,
+        firstName: user.farmerProfile.firstName,
+        lastName: user.farmerProfile.lastName,
+      } : undefined,
+      vetProfile: user.vetProfile ? {
+        id: user.vetProfile.id,
+        firstName: user.vetProfile.firstName,
+        specialization: user.vetProfile.specialization,
+      } : undefined,
+    };
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {

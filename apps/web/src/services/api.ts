@@ -15,7 +15,7 @@ import type {
 } from '@/types'
 import { useAuthStore } from '@/store/auth'
 
-const API_BASE = '/api/v1'
+const API_BASE = '/api'
 
 // Create axios instance with interceptors
 const api = axios.create({
