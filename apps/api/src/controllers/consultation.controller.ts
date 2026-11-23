@@ -17,7 +17,7 @@ export class ConsultationController {
     try {
       const vetId = req.user!.vetProfileId!;
       const result = await consultationService.findAllForVet(vetId, req.query as any);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, consultations: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);
     }
@@ -27,7 +27,7 @@ export class ConsultationController {
     try {
       const farmerId = req.user!.farmerProfileId!;
       const result = await consultationService.findAllForFarmer(farmerId, req.query as any);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, consultations: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);
     }

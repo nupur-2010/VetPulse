@@ -6,7 +6,9 @@ export class HealthReportController {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const farmerId = req.user!.farmerProfileId!;
-      const report = await healthReportService.create(farmerId, req.body as CreateHealthReportInput);
+      const files = req.files as Express.Multer.File[] | undefined;
+      const photoUrls = files ? files.map(f => `/uploads/${f.filename}`) : [];
+      const report = await healthReportService.create(farmerId, req.body as CreateHealthReportInput, photoUrls);
       res.status(201).json({ success: true, data: report });
     } catch (error) {
       next(error);
@@ -15,9 +17,9 @@ export class HealthReportController {
 
   async findAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const farmerId = req.user!.farmerProfileId!;
+      const farmerId = req.user!.role === 'FARMER' ? req.user!.farmerProfileId : undefined;
       const result = await healthReportService.findAll(farmerId, req.query as unknown as ReportListQuery);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, reports: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);
     }
@@ -25,7 +27,7 @@ export class HealthReportController {
 
   async findById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const farmerId = req.user!.farmerProfileId!;
+      const farmerId = req.user!.role === 'FARMER' ? req.user!.farmerProfileId : undefined;
       const report = await healthReportService.findById(req.params.reportId, farmerId);
       res.json({ success: true, data: report });
     } catch (error) {
@@ -45,7 +47,11 @@ export class HealthReportController {
 
   async getPrediction(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const prediction = await predictionService.getPrediction(req.params.reportId);
+      let prediction = await predictionService.getPrediction(req.params.reportId);
+      if (!prediction) {
+        await predictionService.processReport(req.params.reportId);
+        prediction = await predictionService.getPrediction(req.params.reportId);
+      }
       res.json({ success: true, data: prediction });
     } catch (error) {
       next(error);
@@ -54,7 +60,7 @@ export class HealthReportController {
 
   async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const farmerId = req.user!.farmerProfileId!;
+      const farmerId = req.user!.role === 'FARMER' ? req.user!.farmerProfileId! : (req.query.farmerId as string || '');
       const stats = await healthReportService.getStats(farmerId);
       res.json({ success: true, data: stats });
     } catch (error) {

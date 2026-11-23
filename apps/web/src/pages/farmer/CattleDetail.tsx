@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Calendar, MapPin, Weight, BookOpen } from 'lucide-react'
+import { ArrowLeft, Calendar, Weight, BookOpen, Tag } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { cattleApi, reportsApi } from '@/services/api'
+import { cattleApi } from '@/services/api'
 import { formatDate } from '@/lib/utils'
 
 export function CattleDetail() {
@@ -80,7 +80,7 @@ export function CattleDetail() {
               </div>
 
               <div className="flex items-center gap-3">
-                <Gender className="w-5 h-5 text-stone-400" />
+                <Tag className="w-5 h-5 text-stone-400" />
                 <div>
                   <p className="text-sm text-stone-500">Gender</p>
                   <p className="font-medium">{cattle.gender}</p>

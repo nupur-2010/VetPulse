@@ -2,9 +2,10 @@ import prisma from '../config/database.js';
 import { CreateHealthReportInput, UpdateHealthReportInput, ReportListQuery } from '../validators/index.js';
 import { NotFoundError } from '../errors/index.js';
 import { PaginatedResponse } from '../types/index.js';
+import { predictionService } from './prediction.service.js';
 
 export class HealthReportService {
-  async create(farmerId: string, input: CreateHealthReportInput): Promise<any> {
+  async create(farmerId: string, input: CreateHealthReportInput, photoUrls: string[] = []): Promise<any> {
     const cattle = await prisma.cattle.findFirst({
       where: { id: input.cattleId, ownerId: farmerId, isActive: true },
     });
@@ -38,9 +39,14 @@ export class HealthReportService {
         symptoms: {
           create: input.symptoms.map(s => ({
             symptomName: s.symptomName,
-            symptomGroup: s.symptomGroup,
+            symptomGroup: s.symptomGroup || 'General',
           })),
         },
+        photos: photoUrls.length > 0 ? {
+          create: photoUrls.map(url => ({
+            photoUrl: url,
+          })),
+        } : undefined,
       },
       include: {
         symptoms: true,
@@ -50,14 +56,24 @@ export class HealthReportService {
       },
     });
 
-    return report;
+    // Run AI prediction immediately for real-time result
+    try {
+      await predictionService.processReport(report.id);
+    } catch (err) {
+      console.error('Failed to process AI prediction during report creation:', err);
+    }
+
+    return this.findById(report.id);
   }
 
-  async findAll(farmerId: string, query: ReportListQuery): Promise<PaginatedResponse<any>> {
+  async findAll(farmerId: string | undefined, query: ReportListQuery): Promise<PaginatedResponse<any>> {
     const { page, limit, status, state, district, disease, startDate, endDate, sortBy, sortOrder } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = { farmerId };
+    const where: any = {};
+    if (farmerId) {
+      where.farmerId = farmerId;
+    }
     if (status) where.status = status;
     if (state) where.state = state;
     if (district) where.district = district;
@@ -78,7 +94,14 @@ export class HealthReportService {
     const [reports, total] = await Promise.all([
       prisma.healthReport.findMany({
         where,
-        include: { symptoms: true, photos: true, prediction: true, _count: { select: { consultations: true } } },
+        include: {
+          symptoms: true,
+          photos: true,
+          prediction: true,
+          cattle: { select: { id: true, tagNumber: true, name: true, breed: true } },
+          farmer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+          _count: { select: { consultations: true } },
+        },
         orderBy,
         skip,
         take: limit,
@@ -89,14 +112,27 @@ export class HealthReportService {
     return { data: reports, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
-  async findById(reportId: string, farmerId: string): Promise<any> {
+  async findById(reportId: string, farmerId?: string): Promise<any> {
+    const where: any = { id: reportId };
+    if (farmerId) {
+      where.farmerId = farmerId;
+    }
+
     const report = await prisma.healthReport.findFirst({
-      where: { id: reportId, farmerId },
+      where,
       include: {
         symptoms: true,
         photos: true,
-        prediction: { include: { candidates: true } },
-        vetReview: { include: { vet: { select: { id: true, firstName: true, lastName: true, specialization: true } } } },
+        prediction: {
+          include: {
+            candidates: true,
+            vetReviews: {
+              include: {
+                vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+              },
+            },
+          },
+        },
         consultations: { include: { vet: { select: { id: true, firstName: true, lastName: true } } } },
         cattle: { select: { id: true, tagNumber: true, name: true, breed: true, gender: true, farm: { select: { name: true } } } },
         farmer: { select: { id: true, firstName: true, lastName: true, phone: true, state: true, district: true } },
@@ -104,7 +140,13 @@ export class HealthReportService {
     });
 
     if (!report) throw new NotFoundError('Health report');
-    return report;
+
+    const result = report as any;
+    if (report.prediction?.vetReviews && report.prediction.vetReviews.length > 0) {
+      result.vetReview = report.prediction.vetReviews[0];
+    }
+
+    return result;
   }
 
   async update(reportId: string, farmerId: string, input: UpdateHealthReportInput): Promise<any> {

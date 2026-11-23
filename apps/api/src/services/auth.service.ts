@@ -32,6 +32,12 @@ export class AuthService {
             state: input.state!,
             district: input.district!,
             village: input.village,
+            farm: {
+              create: {
+                name: `${input.firstName}'s Farm`,
+                address: input.village ? `${input.village}, ${input.district}` : input.district,
+              },
+            },
           },
         } : undefined,
         vetProfile: input.role === 'VETERINARIAN' ? {
@@ -72,7 +78,7 @@ export class AuthService {
     user: AuthenticatedUser; 
     tokens: { accessToken: string; refreshToken: string };
     farmerProfile?: { id: string; firstName: string; lastName: string } | null;
-    vetProfile?: { id: string; firstName: string; specialization: string } | null;
+    vetProfile?: { id: string; firstName: string; specialization: string | null } | null;
   }> {
     const user = await prisma.user.findUnique({
       where: { email: input.email },
@@ -200,7 +206,7 @@ export class AuthService {
     };
 
     const accessToken = jwt.sign(payload, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
+      expiresIn: config.jwt.expiresIn as any,
     });
 
     const refreshToken = uuidv4();

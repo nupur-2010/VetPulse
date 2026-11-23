@@ -15,6 +15,14 @@ export interface AuthenticatedUser {
   vetProfileId?: string;
 }
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthenticatedUser;
+    }
+  }
+}
+
 export interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }

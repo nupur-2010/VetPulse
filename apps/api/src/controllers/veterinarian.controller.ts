@@ -6,7 +6,7 @@ export class VeterinarianController {
   async findAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await veterinarianService.findAll(req.query as unknown as VetListQuery);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, veterinarians: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);
     }

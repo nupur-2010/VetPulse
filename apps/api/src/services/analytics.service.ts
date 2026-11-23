@@ -72,7 +72,7 @@ export class AnalyticsService {
   }
 
   async updateClusterStatus(clusterId: string, status: string, notes?: string, investigatedBy?: string): Promise<any> {
-    return prisma.diseaseCluster.update({ where: { id: clusterId }, data: { status, notes, investigatedBy, investigatedAt: new Date() } });
+    return prisma.diseaseCluster.update({ where: { id: clusterId }, data: { status: status as any, notes, investigatedBy, investigatedAt: new Date() } });
   }
 
   async createOutbreakAlert(input: OutbreakAlertInput): Promise<any> {

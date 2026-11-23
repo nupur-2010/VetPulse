@@ -17,7 +17,7 @@ export class CattleController {
     try {
       const farmerId = req.user!.farmerProfileId!;
       const result = await cattleService.findAll(farmerId, req.query as unknown as CattleListQuery);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, cattle: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);
     }
@@ -68,6 +68,18 @@ export class CattleController {
       const farmerId = req.user!.farmerProfileId!;
       const vaccinations = await cattleService.getVaccinations(req.params.cattleId, farmerId);
       res.json({ success: true, data: vaccinations });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addPhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const farmerId = req.user!.farmerProfileId!;
+      const file = (req as any).file;
+      const photoUrl = file ? `/uploads/${file.filename}` : req.body.photoUrl || '/placeholder-cow.jpg';
+      const cattle = await cattleService.addPhoto(req.params.cattleId, farmerId, photoUrl);
+      res.status(201).json({ success: true, data: cattle });
     } catch (error) {
       next(error);
     }

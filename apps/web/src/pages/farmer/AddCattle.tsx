@@ -2,14 +2,14 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Save } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { cattleApi } from '@/services/api'
+import type { CreateCattleRequest } from '@/types'
 
 const cattleSchema = z.object({
   tagNumber: z.string().min(1, 'Tag number is required'),
@@ -33,7 +33,7 @@ const BREEDS = [
   { value: 'rathi', label: 'Rathi' },
   { value: 'kankrej', label: 'Kankrej' },
   { value: 'hariana', label: 'Hariana' },
-  { value: 'onion', label: 'Ongole' },
+  { value: 'ongole', label: 'Ongole' },
   { value: 'hallikar', label: 'Hallikar' },
   { value: 'kangayam', label: 'Kangayam' },
   { value: 'jersey-cross', label: 'Jersey Crossbred' },
@@ -56,14 +56,25 @@ export function AddCattle() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: CattleForm) => cattleApi.create(data),
+    mutationFn: (data: CreateCattleRequest) => cattleApi.create(data),
     onSuccess: () => {
       navigate('/farmer/cattle')
     },
   })
 
   const onSubmit = (data: CattleForm) => {
-    createMutation.mutate(data)
+    const payload: CreateCattleRequest = {
+      tagNumber: data.tagNumber.trim(),
+      name: data.name?.trim() || undefined,
+      breed: data.breed,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth && data.dateOfBirth.trim() !== '' ? new Date(data.dateOfBirth).toISOString() : undefined,
+      estimatedAge: data.estimatedAge?.trim() || undefined,
+      weight: data.weight && data.weight.trim() !== '' ? parseFloat(data.weight) : undefined,
+      identificationMarks: data.identificationMarks?.trim() || undefined,
+      pregnancyStatus: data.pregnancyStatus,
+    }
+    createMutation.mutate(payload)
   }
 
   return (

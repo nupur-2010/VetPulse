@@ -21,6 +21,43 @@ export class ConsultationService {
     });
   }
 
+  async createFarmerRequest(farmerId: string, reportId: string, notes?: string): Promise<any> {
+    const report = await prisma.healthReport.findFirst({ where: { id: reportId, farmerId } });
+    if (!report) throw new NotFoundError('Health report');
+
+    let vet = await prisma.vetProfile.findFirst({
+      where: { isAvailable: true },
+    });
+    if (!vet) {
+      vet = await prisma.vetProfile.findFirst();
+    }
+    if (!vet) {
+      throw new NotFoundError('No veterinarian available');
+    }
+
+    const consultation = await prisma.consultation.create({
+      data: {
+        reportId,
+        farmerId,
+        vetId: vet.id,
+        status: 'REQUESTED',
+        reason: notes || 'Consultation requested for health report',
+      },
+      include: {
+        report: { include: { symptoms: true, prediction: true, cattle: true } },
+        vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+        farmer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+      },
+    });
+
+    await prisma.healthReport.update({
+      where: { id: reportId },
+      data: { consultationRequested: true },
+    });
+
+    return consultation;
+  }
+
   async findAllForVet(vetId: string, query: ConsultationListQuery): Promise<PaginatedResponse<any>> {
     const { page, limit, status, sortBy, sortOrder } = query;
     const where: any = { vetId };

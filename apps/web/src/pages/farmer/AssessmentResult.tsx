@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { reportsApi } from '@/services/api'
-import { formatDate } from '@/lib/utils'
 
 export function AssessmentResult() {
   const { id } = useParams<{ id: string }>()
@@ -119,11 +118,11 @@ export function AssessmentResult() {
                 </div>
               )}
 
-              {prediction.supporting_symptoms && prediction.supporting_symptoms.length > 0 && (
+              {(prediction.supportingSymptoms || prediction.supporting_symptoms) && (prediction.supportingSymptoms || prediction.supporting_symptoms)!.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-2">Supporting Symptoms</h4>
                   <div className="flex flex-wrap gap-2">
-                    {prediction.supporting_symptoms.map((s: string, i: number) => (
+                    {(prediction.supportingSymptoms || prediction.supporting_symptoms)!.map((s: string, i: number) => (
                       <Badge key={i} variant="info">{s}</Badge>
                     ))}
                   </div>

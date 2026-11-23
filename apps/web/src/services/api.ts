@@ -11,7 +11,9 @@ import type {
   PredictionReview,
   Consultation,
   VetProfile,
-  DashboardStats
+  DashboardStats,
+  OutbreakCluster,
+  Alert
 } from '@/types'
 import { useAuthStore } from '@/store/auth'
 
@@ -34,9 +36,15 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor for error handling
+// Response interceptor for error handling and data unwrapping
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If response has { success: true, data: actualData }, unwrap it for frontend compatibility
+    if (response.data && response.data.success === true && response.data.data !== undefined) {
+      response.data = response.data.data
+    }
+    return response
+  },
   async (error) => {
     if (error.response?.status === 401) {
       // Token expired, logout
@@ -81,8 +89,18 @@ export const authApi = {
 // Cattle API
 export const cattleApi = {
   list: async (params?: { page?: number; limit?: number; search?: string }): Promise<{ cattle: Cattle[]; total: number }> => {
-    const response = await api.get<{ cattle: Cattle[]; total: number }>('/cattle', { params })
-    return response.data
+    const response = await api.get('/cattle', { params })
+    const res = response.data as any
+    if (Array.isArray(res)) {
+      return { cattle: res, total: res.length }
+    }
+    if (res?.cattle && Array.isArray(res.cattle)) {
+      return { cattle: res.cattle, total: res.total ?? res.cattle.length }
+    }
+    if (res?.data && Array.isArray(res.data)) {
+      return { cattle: res.data, total: res.total ?? res.pagination?.total ?? res.data.length }
+    }
+    return { cattle: [], total: 0 }
   },
 
   get: async (id: string): Promise<Cattle> => {
@@ -149,8 +167,18 @@ export const reportsApi = {
   },
 
   list: async (params?: { page?: number; limit?: number; status?: string; district?: string }): Promise<{ reports: HealthReport[]; total: number }> => {
-    const response = await api.get<{ reports: HealthReport[]; total: number }>('/reports', { params })
-    return response.data
+    const response = await api.get('/reports', { params })
+    const res = response.data as any
+    if (Array.isArray(res)) {
+      return { reports: res, total: res.length }
+    }
+    if (res?.reports && Array.isArray(res.reports)) {
+      return { reports: res.reports, total: res.total ?? res.reports.length }
+    }
+    if (res?.data && Array.isArray(res.data)) {
+      return { reports: res.data, total: res.total ?? res.pagination?.total ?? res.data.length }
+    }
+    return { reports: [], total: 0 }
   },
 
   get: async (id: string): Promise<HealthReport> => {
@@ -176,8 +204,12 @@ export const reportsApi = {
 // Vet API
 export const vetApi = {
   list: async (params?: { district?: string; specialization?: string }): Promise<{ veterinarians: VetProfile[] }> => {
-    const response = await api.get<{ veterinarians: VetProfile[] }>('/veterinarians', { params })
-    return response.data
+    const response = await api.get('/veterinarians', { params })
+    const res = response.data as any
+    if (Array.isArray(res)) return { veterinarians: res }
+    if (res?.veterinarians && Array.isArray(res.veterinarians)) return { veterinarians: res.veterinarians }
+    if (res?.data && Array.isArray(res.data)) return { veterinarians: res.data }
+    return { veterinarians: [] }
   },
 
   get: async (id: string): Promise<VetProfile> => {
@@ -220,13 +252,21 @@ export const reviewsApi = {
 // Consultations API
 export const consultationsApi = {
   listFarmer: async (): Promise<{ consultations: Consultation[] }> => {
-    const response = await api.get<{ consultations: Consultation[] }>('/consultations/farmer')
-    return response.data
+    const response = await api.get('/consultations/farmer')
+    const res = response.data as any
+    if (Array.isArray(res)) return { consultations: res }
+    if (res?.consultations && Array.isArray(res.consultations)) return { consultations: res.consultations }
+    if (res?.data && Array.isArray(res.data)) return { consultations: res.data }
+    return { consultations: [] }
   },
 
   listVet: async (): Promise<{ consultations: Consultation[] }> => {
-    const response = await api.get<{ consultations: Consultation[] }>('/consultations/vet')
-    return response.data
+    const response = await api.get('/consultations/vet')
+    const res = response.data as any
+    if (Array.isArray(res)) return { consultations: res }
+    if (res?.consultations && Array.isArray(res.consultations)) return { consultations: res.consultations }
+    if (res?.data && Array.isArray(res.data)) return { consultations: res.data }
+    return { consultations: [] }
   },
 
   get: async (id: string): Promise<Consultation> => {
@@ -322,39 +362,5 @@ export const aiServiceApi = {
   },
 }
 
-// Helper types
-export interface OutbreakCluster {
-  id: string
-  name: string
-  status: string
-  district: string
-  state: string
-  radius: number
-  animalCount: number
-  reportCount: number
-  createdAt: string
-  latitude: number
-  longitude: number
-  suspectedDisease?: string
-}
-
-export interface Alert {
-  id: string
-  type: string
-  severity: string
-  title: string
-  message: string
-  isRead: boolean
-  createdAt: string
-}
-
-export interface DashboardStats {
-  totalCattle?: number
-  activeReports?: number
-  pendingReviews?: number
-  consultationsCount?: number
-  recentReports?: HealthReport[]
-  diseaseBreakdown?: Array<{ disease: string; count: number }>
-  districtBreakdown?: Array<{ district: string; count: number }>
-  dailyTrends?: Array<{ date: string; count: number }>
-}
+// Helper types re-exported
+export type { OutbreakCluster, Alert, DashboardStats } from '@/types'

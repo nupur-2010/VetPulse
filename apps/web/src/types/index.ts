@@ -217,6 +217,7 @@ export interface Prediction {
   confidenceInterpretation?: string
   severity?: string
   supportingSymptoms: string[]
+  supporting_symptoms?: string[]
   recommendations: string[]
   possible_conditions?: Array<{ disease: string; confidence: number }>
   imageAssessmentStatus?: string
@@ -253,4 +254,40 @@ export interface Consultation {
   farmerName?: string
   reportNumber?: string
   createdAt: string
+}
+
+export interface OutbreakCluster {
+  id: string
+  name: string
+  status: string
+  district: string
+  state: string
+  radius: number
+  animalCount: number
+  reportCount: number
+  createdAt: string
+  latitude: number
+  longitude: number
+  suspectedDisease?: string
+}
+
+export interface Alert {
+  id: string
+  type: string
+  severity: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+}
+
+export interface DashboardStats {
+  totalCattle?: number
+  activeReports?: number
+  pendingReviews?: number
+  consultationsCount?: number
+  recentReports?: HealthReport[]
+  diseaseBreakdown?: Array<{ disease: string; count: number }>
+  districtBreakdown?: Array<{ district: string; count: number }>
+  dailyTrends?: Array<{ date: string; count: number }>
 }

@@ -1,6 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
-import { Button } from '@/components/ui/Button'
 import {
   LayoutDashboard,
   BookOpen,
@@ -11,10 +10,8 @@ import {
   Menu,
   X,
   ChevronDown,
-  User,
   FileText,
-  PlusCircle,
-  Shield
+  PlusCircle
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'

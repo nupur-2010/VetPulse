@@ -6,10 +6,8 @@ import {
   MapPin, 
   Users, 
   TrendingUp, 
-  Bell,
   ArrowRight,
   CheckCircle2,
-  Star,
   Microscope,
   Globe
 } from 'lucide-react'

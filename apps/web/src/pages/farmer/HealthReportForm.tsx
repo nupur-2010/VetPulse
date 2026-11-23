@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Upload, X, FileText, MapPin, Thermometer } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, MapPin, Thermometer } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'

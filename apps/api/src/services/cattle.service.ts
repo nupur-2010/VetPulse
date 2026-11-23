@@ -5,12 +5,19 @@ import { PaginatedResponse } from '../types/index.js';
 
 export class CattleService {
   async create(farmerId: string, input: CreateCattleInput): Promise<any> {
-    const farm = await prisma.farm.findUnique({
+    let farm = await prisma.farm.findUnique({
       where: { farmerId },
     });
 
     if (!farm) {
-      throw new NotFoundError('Farm not found. Please create a farm first.');
+      const farmer = await prisma.farmerProfile.findUnique({ where: { id: farmerId } });
+      farm = await prisma.farm.create({
+        data: {
+          farmerId,
+          name: farmer ? `${farmer.firstName}'s Farm` : 'My Farm',
+          address: farmer?.village ? `${farmer.village}, ${farmer.district}` : (farmer?.district || 'Farm Location'),
+        },
+      });
     }
 
     const existingCattle = await prisma.cattle.findFirst({
@@ -202,6 +209,26 @@ export class CattleService {
       where: { cattleId },
       orderBy: { dateGiven: 'desc' },
     });
+  }
+
+  async addPhoto(cattleId: string, farmerId: string, photoUrl: string): Promise<any> {
+    const cattle = await prisma.cattle.findFirst({
+      where: { id: cattleId, ownerId: farmerId },
+    });
+
+    if (!cattle) {
+      throw new NotFoundError('Cattle');
+    }
+
+    await prisma.cattlePhoto.create({
+      data: {
+        cattleId,
+        photoUrl,
+        isPrimary: true,
+      },
+    });
+
+    return this.findById(cattleId, farmerId);
   }
 }
 

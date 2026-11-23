@@ -4,10 +4,7 @@ import {
   Plus, 
   BookOpen, 
   FileText, 
-  Users, 
-  TrendingUp,
   ChevronRight,
-  AlertCircle,
   Clock,
   CheckCircle2
 } from 'lucide-react'

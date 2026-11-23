@@ -6,7 +6,7 @@ export class AdminController {
   async getUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await analyticsService.getUsers(req.query as unknown as UserManagementQuery);
-      res.json({ success: true, ...result });
+      res.json({ success: true, ...result, users: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);
     }

@@ -1,9 +1,6 @@
-import { useQuery } from '@tantml/react-query'
 import { Link } from 'react-router-dom'
-import { Users, BookOpen, FileText, AlertTriangle, TrendingUp, Map, BarChart3 } from 'lucide-react'
+import { Users, BookOpen, FileText, AlertTriangle, Map, BarChart3 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
-import { useAuthStore } from '@/store/auth'
-import { adminApi } from '@/services/api'
 
 export function AdminDashboard() {
   const stats = [

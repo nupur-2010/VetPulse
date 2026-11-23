@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Clock, XCircle, RefreshCw } from 'lucide-react'
+import { AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
