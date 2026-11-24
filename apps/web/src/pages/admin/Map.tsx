@@ -121,15 +121,18 @@ export function AdminMap() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Live Disease Tracking</CardTitle>
-            <Select
-              options={[
-                { value: '', label: 'All Districts' },
-                ...districts.map((d) => ({ value: d, label: d })),
-              ]}
-              value={selectedDistrict}
-              onChange={(e) => setSelectedDistrict(e.target.value)}
-              placeholder="Filter by district"
-            />
+            {/* z-[1000] ensures the dropdown renders above Leaflet map panes (max z-index ~700) */}
+            <div className="relative z-[1000] min-w-[200px]">
+              <Select
+                options={[
+                  { value: '', label: 'All Districts' },
+                  ...districts.map((d) => ({ value: d, label: d })),
+                ]}
+                value={selectedDistrict}
+                onChange={(e) => setSelectedDistrict(e.target.value)}
+                placeholder="Filter by district"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -139,7 +142,7 @@ export function AdminMap() {
             </div>
           )}
 
-          <div className="h-[520px] rounded-lg overflow-hidden bg-stone-100 relative">
+          <div className="h-[520px] rounded-lg bg-stone-100 relative overflow-hidden" style={{ zIndex: 0 }}>
             <MapContainer
               center={mapCenter}
               zoom={7}
