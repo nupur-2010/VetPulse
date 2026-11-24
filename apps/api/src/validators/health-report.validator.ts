@@ -84,6 +84,7 @@ export const reportListQuerySchema = z.object({
 export const addPredictionReviewSchema = z.object({
   reportId: z.string().uuid('Invalid report ID').optional(),
   decision: z.enum(['AGREES_AI', 'DISAGREES_AI', 'INCONCLUSIVE', 'ALTERNATIVE_DISEASE', 'NEEDS_EXAMINATION']),
+  diagnosedDisease: z.string().optional(),
   confidence: z.number().min(0).max(1).optional(),
   notes: z.string().optional(),
   remarks: z.string().optional(),

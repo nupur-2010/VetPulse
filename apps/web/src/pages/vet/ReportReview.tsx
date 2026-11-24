@@ -25,11 +25,28 @@ import { Input } from '@/components/ui/Input'
 import { reportsApi, reviewsApi } from '@/services/api'
 import { formatDateTime } from '@/lib/utils'
 
+export const DIAGNOSED_DISEASE_OPTIONS = [
+  { value: 'Foot-and-Mouth Disease', label: 'Foot-and-Mouth Disease' },
+  { value: 'Blackleg', label: 'Blackleg' },
+  { value: 'Anthrax', label: 'Anthrax' },
+  { value: 'Bovine Respiratory Disease', label: 'Bovine Respiratory Disease' },
+  { value: 'Haemorrhagic Septicaemia', label: 'Haemorrhagic Septicaemia' },
+  { value: 'Lumpy Skin Disease', label: 'Lumpy Skin Disease' },
+  { value: 'Mastitis', label: 'Mastitis' },
+  { value: 'Theileriosis', label: 'Theileriosis' },
+  { value: 'Clostridial Diseases', label: 'Clostridial Diseases' },
+  { value: 'Brucellosis', label: 'Brucellosis' },
+  { value: 'Other', label: 'Other' },
+  { value: 'Healthy', label: 'Healthy (No Disease)' },
+]
+
 export function VetReportReview() {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
 
   const [decision, setDecision] = useState('')
+  const [diagnosedDisease, setDiagnosedDisease] = useState('')
+  const [otherDiseaseName, setOtherDiseaseName] = useState('')
   const [remarks, setRemarks] = useState('')
   const [alternativeDiagnosis, setAlternativeDiagnosis] = useState('')
   const [recommendedActions, setRecommendedActions] = useState('')
@@ -43,13 +60,32 @@ export function VetReportReview() {
     enabled: !!id,
   })
 
-  // Pre-fill existing review if available
+  // Pre-fill existing review or AI suggestion if available
   useEffect(() => {
-    if (report?.vetReview) {
-      setDecision(report.vetReview.decision || '')
-      setRemarks(report.vetReview.notes || '')
-      setAlternativeDiagnosis(report.vetReview.alternativeDiagnosis || '')
-      setRecommendedActions(report.vetReview.recommendedActions || '')
+    if (report) {
+      if (report.vetReview) {
+        setDecision(report.vetReview.decision || '')
+        setRemarks(report.vetReview.notes || '')
+        setAlternativeDiagnosis(report.vetReview.alternativeDiagnosis || '')
+        setRecommendedActions(report.vetReview.recommendedActions || '')
+
+        const existingDiagnosis = report.vetReview.alternativeDiagnosis || report.prediction?.predictedDisease || ''
+        const matchingStandard = DIAGNOSED_DISEASE_OPTIONS.find((opt) => opt.value === existingDiagnosis)
+        if (matchingStandard) {
+          setDiagnosedDisease(matchingStandard.value)
+        } else if (existingDiagnosis) {
+          setDiagnosedDisease('Other')
+          setOtherDiseaseName(existingDiagnosis)
+        }
+      } else if (report.prediction?.predictedDisease) {
+        const matching = DIAGNOSED_DISEASE_OPTIONS.find((opt) => opt.value === report.prediction?.predictedDisease)
+        if (matching) {
+          setDiagnosedDisease(matching.value)
+        } else {
+          setDiagnosedDisease('Other')
+          setOtherDiseaseName(report.prediction.predictedDisease)
+        }
+      }
     }
   }, [report])
 
@@ -73,19 +109,27 @@ export function VetReportReview() {
       return
     }
 
-    if (decision === 'ALTERNATIVE_DISEASE' && !alternativeDiagnosis.trim()) {
-      setSubmitError('Please enter the alternative suspected disease')
+    if (!diagnosedDisease) {
+      setSubmitError('Please select a diagnosed disease')
       return
     }
+
+    if (diagnosedDisease === 'Other' && !otherDiseaseName.trim()) {
+      setSubmitError('Please specify the other diagnosed disease condition')
+      return
+    }
+
+    const finalDiagnosis = diagnosedDisease === 'Other' ? otherDiseaseName.trim() : diagnosedDisease
 
     setSubmitError(null)
     reviewMutation.mutate({
       reportId: id,
       decision,
+      diagnosedDisease: finalDiagnosis,
       remarks,
       clinicalFindings: remarks,
-      alternativeDiagnosis: alternativeDiagnosis.trim() || undefined,
-      suspectedDisease: alternativeDiagnosis.trim() || undefined,
+      alternativeDiagnosis: finalDiagnosis,
+      suspectedDisease: finalDiagnosis,
       recommendedActions: recommendedActions.trim() || undefined,
     })
   }
@@ -449,6 +493,14 @@ export function VetReportReview() {
                 Dr. {report.vetReview.vet?.firstName} {report.vetReview.vet?.lastName}
               </span>
             </div>
+            {report.vetReview.alternativeDiagnosis && (
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-stone-500">Diagnosed Condition:</span>
+                <span className="font-bold text-teal-900 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                  {report.vetReview.alternativeDiagnosis}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-xs">
               <span className="text-stone-500">Review Timestamp:</span>
               <span className="font-medium text-stone-800">{formatDateTime(report.vetReview.createdAt)}</span>
@@ -477,27 +529,50 @@ export function VetReportReview() {
         </CardHeader>
         <CardContent className="pt-5 space-y-4">
           <form onSubmit={handleSubmitReview} className="space-y-4">
-            <Select
-              label="Review Decision *"
-              value={decision}
-              onChange={(e) => setDecision(e.target.value)}
-              options={[
-                { value: 'AGREES_AI', label: 'Agrees with AI suggestion (Confirmed Diagnosis)' },
-                { value: 'ALTERNATIVE_DISEASE', label: 'Alternative suspected disease' },
-                { value: 'DISAGREES_AI', label: 'Disagrees with AI suggestion' },
-                { value: 'NEEDS_EXAMINATION', label: 'Needs physical / further examination' },
-                { value: 'INCONCLUSIVE', label: 'Inconclusive / More data required' },
-              ]}
-              placeholder="-- Select your veterinary evaluation --"
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Select
+                label="Review Decision *"
+                value={decision}
+                onChange={(e) => setDecision(e.target.value)}
+                options={[
+                  { value: 'AGREES_AI', label: 'Agrees with AI suggestion (Confirmed Diagnosis)' },
+                  { value: 'ALTERNATIVE_DISEASE', label: 'Alternative suspected disease' },
+                  { value: 'DISAGREES_AI', label: 'Disagrees with AI suggestion' },
+                  { value: 'NEEDS_EXAMINATION', label: 'Needs physical / further examination' },
+                  { value: 'INCONCLUSIVE', label: 'Inconclusive / More data required' },
+                ]}
+                placeholder="-- Select your veterinary evaluation --"
+              />
 
-            {decision === 'ALTERNATIVE_DISEASE' && (
+              <Select
+                label="Diagnosed Disease *"
+                value={diagnosedDisease}
+                onChange={(e) => setDiagnosedDisease(e.target.value)}
+                options={DIAGNOSED_DISEASE_OPTIONS}
+                placeholder="-- Select confirmed clinical diagnosis --"
+              />
+            </div>
+
+            <p className="text-xs text-stone-500 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+              ℹ️ <strong>Surveillance Notice:</strong> Reports confirmed by a veterinarian are automatically fed into the epidemiological outbreak detection engine. Diagnoses of <em>Healthy</em> are recorded for animal health records but omitted from disease cluster tracking.
+            </p>
+
+            {diagnosedDisease === 'Other' && (
               <Input
-                label="Alternative Suspected Condition *"
-                placeholder="e.g. Foot Rot, Babesiosis, Pneumonia"
+                label="Specify Other Diagnosed Disease Condition *"
+                placeholder="e.g. Foot Rot, Babesiosis, Ringworm, Anaplasmosis"
+                value={otherDiseaseName}
+                onChange={(e) => setOtherDiseaseName(e.target.value)}
+                required
+              />
+            )}
+
+            {decision === 'ALTERNATIVE_DISEASE' && diagnosedDisease !== 'Other' && (
+              <Input
+                label="Additional Clinical Notes on Alternative Diagnosis"
+                placeholder="Additional notes about differential diagnosis"
                 value={alternativeDiagnosis}
                 onChange={(e) => setAlternativeDiagnosis(e.target.value)}
-                required
               />
             )}
 

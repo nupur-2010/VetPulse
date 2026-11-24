@@ -35,6 +35,8 @@ export class ReviewService {
       predictionId = pred.id;
     }
 
+    const diagnosed = input.diagnosedDisease || input.alternativeDiagnosis || input.suspectedDisease;
+
     const review = await prisma.predictionReview.create({
       data: {
         predictionId,
@@ -42,7 +44,7 @@ export class ReviewService {
         decision: input.decision,
         confidence: input.confidence,
         notes: input.notes || input.remarks || input.clinicalFindings,
-        alternativeDiagnosis: input.alternativeDiagnosis || input.suspectedDisease,
+        alternativeDiagnosis: diagnosed,
         recommendedActions: input.recommendedActions || input.suggestedNextSteps,
       },
       include: {
@@ -57,7 +59,14 @@ export class ReviewService {
       },
     });
 
-    const newStatus = input.decision === 'AGREES_AI' ? 'CONFIRMED' : 'VET_REVIEWED';
+    if (diagnosed) {
+      await prisma.prediction.update({
+        where: { id: predictionId },
+        data: { predictedDisease: diagnosed },
+      });
+    }
+
+    const newStatus = input.decision === 'AGREES_AI' || diagnosed ? 'CONFIRMED' : 'VET_REVIEWED';
     await prisma.healthReport.update({
       where: { id: reportId },
       data: { status: newStatus },

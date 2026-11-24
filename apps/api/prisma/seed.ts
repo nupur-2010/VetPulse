@@ -48,6 +48,11 @@ async function main() {
   })
   console.log('Created vet user:', vet.email)
 
+  // Get vet profile
+  const vetProfile = await prisma.vetProfile.findFirst({
+    where: { userId: vet.id },
+  });
+
   // Create farmer user
   const farmerPassword = await bcrypt.hash('Farmer@123', 12)
   const farmer = await prisma.user.upsert({
@@ -286,7 +291,7 @@ async function main() {
           symptomDuration: `${(index % 5) + 1} days`,
           severity,
           consultationRequested: severity === 'severe',
-          status: 'AI_COMPLETED',
+          status: 'CONFIRMED',
           symptoms: {
             create: [
               { symptomName: 'Fever', symptomGroup: 'General' },
@@ -312,6 +317,15 @@ async function main() {
               ],
               disclaimer: 'This is a simulated AI prediction for demonstration purposes only.',
               status: 'COMPLETED',
+              vetReviews: vetProfile ? {
+                create: {
+                  vetId: vetProfile.id,
+                  decision: 'AGREES_AI',
+                  confidence: 0.95,
+                  notes: `Clinical examination confirmed: ${opts.disease}.`,
+                  alternativeDiagnosis: opts.disease,
+                },
+              } : undefined,
             },
           },
         },
