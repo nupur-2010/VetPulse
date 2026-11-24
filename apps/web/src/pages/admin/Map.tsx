@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
+import { MultiSelect, MultiSelectOption } from '@/components/ui/MultiSelect'
 import { analyticsApi } from '@/services/api'
 import { formatDate } from '@/lib/utils'
 
@@ -34,6 +34,41 @@ export const SEVERITY_COLORS: Record<string, string> = {
   DISMISSED: '#78716c',
   ACTIVE: '#dc2626',
 }
+
+export const CORE_DISEASES = [
+  'Foot-and-Mouth Disease',
+  'Blackleg',
+  'Anthrax',
+  'Bovine Respiratory Disease',
+  'Haemorrhagic Septicaemia',
+  'Lumpy Skin Disease',
+  'Mastitis',
+  'Theileriosis',
+  'Clostridial Diseases',
+  'Brucellosis',
+]
+
+export const RISK_FILTER_OPTIONS: MultiSelectOption[] = [
+  { value: 'CRITICAL', label: 'Critical (≥10 cases)', color: SEVERITY_COLORS.CRITICAL },
+  { value: 'HIGH', label: 'High (6-9 cases)', color: SEVERITY_COLORS.HIGH },
+  { value: 'MEDIUM', label: 'Medium (4-5 cases)', color: SEVERITY_COLORS.MEDIUM },
+  { value: 'LOW', label: 'Low (3 cases)', color: SEVERITY_COLORS.LOW },
+  { value: 'POTENTIAL', label: 'Potential Surveillance', color: SEVERITY_COLORS.POTENTIAL },
+]
+
+export const DISEASE_FILTER_OPTIONS: MultiSelectOption[] = [
+  { value: 'Foot-and-Mouth Disease', label: 'Foot-and-Mouth Disease' },
+  { value: 'Blackleg', label: 'Blackleg' },
+  { value: 'Anthrax', label: 'Anthrax' },
+  { value: 'Bovine Respiratory Disease', label: 'Bovine Respiratory Disease' },
+  { value: 'Haemorrhagic Septicaemia', label: 'Haemorrhagic Septicaemia' },
+  { value: 'Lumpy Skin Disease', label: 'Lumpy Skin Disease' },
+  { value: 'Mastitis', label: 'Mastitis' },
+  { value: 'Theileriosis', label: 'Theileriosis' },
+  { value: 'Clostridial Diseases', label: 'Clostridial Diseases' },
+  { value: 'Brucellosis', label: 'Brucellosis' },
+  { value: 'Other', label: 'Other Diseases' },
+]
 
 function getClusterSeverity(c: any): string {
   const explicit = (c.severity || c.riskLevel || '').toUpperCase()
@@ -102,7 +137,9 @@ function normalizeClusters(raw: any): ClusterPoint[] {
 }
 
 export function AdminMap() {
-  const [selectedDistrict, setSelectedDistrict] = useState('')
+  const [selectedDistricts, setSelectedDistricts] = useState<string[]>([])
+  const [selectedRisks, setSelectedRisks] = useState<string[]>([])
+  const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
   const [clusters, setClusters] = useState<ClusterPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -132,9 +169,35 @@ export function AdminMap() {
   }, [clusters])
 
   const visibleClusters = useMemo(() => {
-    if (!selectedDistrict) return clusters
-    return clusters.filter((c) => c.district === selectedDistrict)
-  }, [clusters, selectedDistrict])
+    return clusters.filter((c) => {
+      // 1. District multi-select filter
+      if (selectedDistricts.length > 0 && !selectedDistricts.includes(c.district)) {
+        return false
+      }
+      // 2. Risk level multi-select filter
+      if (selectedRisks.length > 0 && !selectedRisks.includes(c.severity)) {
+        return false
+      }
+      // 3. Disease multi-select filter
+      if (selectedDiseases.length > 0) {
+        const directMatch = selectedDiseases.includes(c.disease)
+        const isOther = !CORE_DISEASES.includes(c.disease)
+        const otherMatch = selectedDiseases.includes('Other') && isOther
+        if (!directMatch && !otherMatch) {
+          return false
+        }
+      }
+      return true
+    })
+  }, [clusters, selectedDistricts, selectedRisks, selectedDiseases])
+
+  const hasActiveFilters = selectedDistricts.length > 0 || selectedRisks.length > 0 || selectedDiseases.length > 0
+
+  const handleResetFilters = () => {
+    setSelectedDistricts([])
+    setSelectedRisks([])
+    setSelectedDiseases([])
+  }
 
   const recalc = async () => {
     setLoading(true)
@@ -165,19 +228,53 @@ export function AdminMap() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Live Disease Tracking</CardTitle>
-            {/* z-[1000] ensures the dropdown renders above Leaflet map panes (max z-index ~700) */}
-            <div className="relative z-[1000] min-w-[200px]">
-              <Select
-                options={[
-                  { value: '', label: 'All Districts' },
-                  ...districts.map((d) => ({ value: d, label: d })),
-                ]}
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(e.target.value)}
-                placeholder="Filter by district"
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Live Disease Tracking</CardTitle>
+              <p className="text-xs text-stone-500 mt-1">
+                Showing {visibleClusters.length} of {clusters.length} detected clusters
+              </p>
+            </div>
+
+            {/* Filter controls beside district filter with multi-select support */}
+            {/* z-[1000] ensures the dropdowns render above Leaflet map panes */}
+            <div className="relative z-[1000] flex flex-wrap items-center gap-2.5">
+              <MultiSelect
+                label="District"
+                placeholder="All Districts"
+                options={districts.map((d) => ({ value: d, label: d }))}
+                selected={selectedDistricts}
+                onChange={setSelectedDistricts}
+                showSearch
               />
+
+              <MultiSelect
+                label="Risk"
+                placeholder="All Risk Levels"
+                options={RISK_FILTER_OPTIONS}
+                selected={selectedRisks}
+                onChange={setSelectedRisks}
+              />
+
+              <MultiSelect
+                label="Disease"
+                placeholder="All Diseases"
+                options={DISEASE_FILTER_OPTIONS}
+                selected={selectedDiseases}
+                onChange={setSelectedDiseases}
+                showSearch
+              />
+
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetFilters}
+                  className="text-xs h-8 text-stone-600 hover:text-stone-900 border-dashed rounded-xl"
+                >
+                  Reset Filters
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

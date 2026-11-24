@@ -155,29 +155,49 @@ export class OutbreakDetectionService {
   }
 
   async detectClusters(): Promise<any[]> {
+    // Only reports with vet-confirmed diagnoses are used for cluster analysis
     const recentReports = await prisma.healthReport.findMany({
       where: {
-        status: { in: ['AI_COMPLETED', 'VET_REVIEWED', 'CONFIRMED'] },
+        status: { in: ['CONFIRMED', 'VET_REVIEWED'] },
         latitude: { not: null },
         longitude: { not: null },
       },
-      include: { prediction: true },
+      include: {
+        prediction: {
+          include: {
+            vetReviews: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
-      take: 500,
+      take: 1000,
     });
 
-    const cases: GeoPoint[] = recentReports
-      .filter((r) => r.prediction?.predictedDisease && r.latitude && r.longitude)
-      .map((r) => ({
+    const cases: GeoPoint[] = [];
+    for (const r of recentReports) {
+      if (!r.latitude || !r.longitude) continue;
+      const latestReview = r.prediction?.vetReviews?.[0];
+      const confirmedDisease = latestReview?.alternativeDiagnosis || r.prediction?.predictedDisease;
+      
+      // Exclude healthy animals and cases without confirmed diagnosis
+      if (!confirmedDisease || confirmedDisease.trim().toLowerCase() === 'healthy') {
+        continue;
+      }
+
+      cases.push({
         id: r.id,
         reportNumber: r.reportNumber || r.id,
-        disease: r.prediction!.predictedDisease!,
-        lat: r.latitude!,
-        lng: r.longitude!,
+        disease: confirmedDisease.trim(),
+        lat: r.latitude,
+        lng: r.longitude,
         district: r.district,
         state: r.state,
         createdAt: r.createdAt,
-      }));
+      });
+    }
 
     // Group by disease, then run DBSCAN independently per disease so clusters stay disease-specific.
     const byDisease = new Map<string, GeoPoint[]>();
