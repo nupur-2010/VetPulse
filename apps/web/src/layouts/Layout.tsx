@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
+import { authApi } from '@/services/api'
 import {
   LayoutDashboard,
   BookOpen,
@@ -59,9 +60,18 @@ export function Layout() {
     ? `${vetProfile.firstName} ${vetProfile.lastName}`
     : user?.email || 'User'
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
+  const handleLogout = async () => {
+    try {
+      const refreshToken = useAuthStore.getState().refreshToken
+      if (refreshToken) {
+        await authApi.logout(refreshToken)
+      }
+    } catch {
+      // Ignore network errors during logout
+    } finally {
+      logout()
+      navigate('/login')
+    }
   }
 
   return (
