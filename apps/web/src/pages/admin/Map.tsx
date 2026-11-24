@@ -13,6 +13,7 @@ interface ClusterPoint {
   name: string
   disease: string
   status: string
+  severity: string
   district: string
   state: string
   latitude: number
@@ -22,28 +23,7 @@ interface ClusterPoint {
   createdAt: string
 }
 
-function normalizeClusters(raw: any): ClusterPoint[] {
-  if (!raw) return []
-  const list: any[] = Array.isArray(raw) ? raw : raw.clusters || []
-  if (!Array.isArray(list)) return []
-  return list
-    .filter((c) => c && (c.centerLatitude || c.latitude) && (c.centerLongitude || c.longitude))
-    .map((c) => ({
-      id: c.id || c.clusterId || '',
-      name: c.name || `${c.disease || 'Cluster'} Cluster`,
-      disease: c.disease || c.suspectedDisease || 'Unknown',
-      status: c.status || 'POTENTIAL',
-      district: c.district || '—',
-      state: c.state || '—',
-      latitude: Number(c.centerLatitude ?? c.latitude),
-      longitude: Number(c.centerLongitude ?? c.longitude),
-      radiusKm: Number(c.radiusKm ?? c.radius ?? 10),
-      reportCount: Number(c.reportCount ?? c.animalCount ?? 0),
-      createdAt: c.createdAt || c.lastReportAt || new Date().toISOString(),
-    }))
-}
-
-const SEVERITY_COLORS: Record<string, string> = {
+export const SEVERITY_COLORS: Record<string, string> = {
   CRITICAL: '#dc2626',
   HIGH: '#ea580c',
   MEDIUM: '#eab308',
@@ -51,8 +31,74 @@ const SEVERITY_COLORS: Record<string, string> = {
   POTENTIAL: '#3b82f6',
   UNDER_INVESTIGATION: '#ea580c',
   SUSPECTED_OUTBREAK: '#dc2626',
-  LAB_CONFIRMED: '#7f1d1d',
+  DISMISSED: '#78716c',
   ACTIVE: '#dc2626',
+}
+
+function getClusterSeverity(c: any): string {
+  const explicit = (c.severity || c.riskLevel || '').toUpperCase()
+  if (explicit && SEVERITY_COLORS[explicit]) return explicit
+
+  const statusUpper = (c.status || '').toUpperCase()
+  if (statusUpper === 'LAB_CONFIRMED') return 'CRITICAL'
+  if (statusUpper === 'SUSPECTED_OUTBREAK') return 'CRITICAL'
+  if (statusUpper === 'UNDER_INVESTIGATION') return 'HIGH'
+  if (statusUpper === 'CRITICAL' || statusUpper === 'HIGH' || statusUpper === 'MEDIUM' || statusUpper === 'LOW') {
+    return statusUpper
+  }
+
+  const count = Number(c.reportCount ?? c.animalCount ?? 0)
+  if (count >= 10) return 'CRITICAL'
+  if (count >= 6) return 'HIGH'
+  if (count >= 4) return 'MEDIUM'
+  if (count >= 1) return 'LOW'
+
+  return 'POTENTIAL'
+}
+
+export function getClusterColor(cluster: { status?: string; severity?: string; reportCount?: number; animalCount?: number }): string {
+  const statusUpper = (cluster.status || '').toUpperCase()
+  if (statusUpper === 'LAB_CONFIRMED') return SEVERITY_COLORS.CRITICAL
+  if (statusUpper === 'SUSPECTED_OUTBREAK') return SEVERITY_COLORS.SUSPECTED_OUTBREAK
+  if (statusUpper === 'UNDER_INVESTIGATION') return SEVERITY_COLORS.UNDER_INVESTIGATION
+  if (statusUpper === 'DISMISSED') return SEVERITY_COLORS.DISMISSED
+
+  const severityUpper = (cluster.severity || '').toUpperCase()
+  if (SEVERITY_COLORS[severityUpper]) return SEVERITY_COLORS[severityUpper]
+
+  const count = Number(cluster.reportCount ?? cluster.animalCount ?? 0)
+  if (count >= 10) return SEVERITY_COLORS.CRITICAL
+  if (count >= 6) return SEVERITY_COLORS.HIGH
+  if (count >= 4) return SEVERITY_COLORS.MEDIUM
+  if (count >= 1) return SEVERITY_COLORS.LOW
+
+  return SEVERITY_COLORS.POTENTIAL
+}
+
+function normalizeClusters(raw: any): ClusterPoint[] {
+  if (!raw) return []
+  const list: any[] = Array.isArray(raw) ? raw : raw.clusters || []
+  if (!Array.isArray(list)) return []
+  return list
+    .filter((c) => c && (c.centerLatitude || c.latitude) && (c.centerLongitude || c.longitude))
+    .map((c) => {
+      const severity = getClusterSeverity(c)
+      const fallbackDistrict = c.name ? c.name.split(' ')[0] : 'Maharashtra'
+      return {
+        id: c.id || c.clusterId || '',
+        name: c.name || `${c.disease || 'Cluster'} Cluster`,
+        disease: c.disease || c.suspectedDisease || 'Unknown',
+        status: c.status || 'POTENTIAL',
+        severity,
+        district: c.district && c.district !== '—' ? c.district : fallbackDistrict,
+        state: c.state && c.state !== '—' ? c.state : 'Maharashtra',
+        latitude: Number(c.centerLatitude ?? c.latitude),
+        longitude: Number(c.centerLongitude ?? c.longitude),
+        radiusKm: Number(c.radiusKm ?? c.radius ?? 10),
+        reportCount: Number(c.reportCount ?? c.animalCount ?? 0),
+        createdAt: c.createdAt || c.lastReportAt || new Date().toISOString(),
+      }
+    })
 }
 
 export function AdminMap() {
@@ -152,30 +198,38 @@ export function AdminMap() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {visibleClusters.map((cluster) => {
-                const color = SEVERITY_COLORS[cluster.status.toUpperCase()] || SEVERITY_COLORS.POTENTIAL
+                const color = getClusterColor(cluster)
                 return (
                   <CircleMarker
                     key={cluster.id}
                     center={[cluster.latitude, cluster.longitude]}
                     radius={Math.min(10 + cluster.reportCount * 2, 32)}
-                    pathOptions={{ color, fillColor: color, fillOpacity: 0.55, weight: 2 }}
+                    pathOptions={{ color, fillColor: color, fillOpacity: 0.6, weight: 2 }}
                   >
                     <Tooltip>
                       <div className="text-xs">
                         <strong>{cluster.disease}</strong>
                         <br />
-                        {cluster.reportCount} case(s) • {cluster.district}
+                        <span style={{ color }}>● {cluster.severity}</span> • {cluster.reportCount} case(s) • {cluster.district}
                       </div>
                     </Tooltip>
                     <Popup>
-                      <div className="text-sm min-w-[180px]">
-                        <p className="font-semibold">{cluster.name}</p>
-                        <p className="text-xs text-stone-600">Disease: {cluster.disease}</p>
-                        <p className="text-xs text-stone-600">Status: {cluster.status.replace(/_/g, ' ')}</p>
-                        <p className="text-xs text-stone-600">Cases: {cluster.reportCount}</p>
-                        <p className="text-xs text-stone-600">Radius: {cluster.radiusKm} km</p>
-                        <p className="text-xs text-stone-600">District: {cluster.district}, {cluster.state}</p>
-                        <p className="text-xs text-stone-400">Detected: {formatDate(cluster.createdAt)}</p>
+                      <div className="text-sm min-w-[200px]">
+                        <div className="flex items-center justify-between gap-2 border-b border-stone-200 pb-1.5 mb-2">
+                          <p className="font-bold text-stone-900">{cluster.name}</p>
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase tracking-wider"
+                            style={{ background: color }}
+                          >
+                            {cluster.severity}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-600"><strong>Disease:</strong> {cluster.disease}</p>
+                        <p className="text-xs text-stone-600"><strong>Status:</strong> {cluster.status.replace(/_/g, ' ')}</p>
+                        <p className="text-xs text-stone-600"><strong>Cases:</strong> {cluster.reportCount} reports</p>
+                        <p className="text-xs text-stone-600"><strong>Radius:</strong> {cluster.radiusKm} km</p>
+                        <p className="text-xs text-stone-600"><strong>District:</strong> {cluster.district}, {cluster.state}</p>
+                        <p className="text-xs text-stone-400 mt-1"><strong>Detected:</strong> {formatDate(cluster.createdAt)}</p>
                       </div>
                     </Popup>
                   </CircleMarker>
@@ -200,24 +254,24 @@ export function AdminMap() {
 
           <div className="mt-4 flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ background: SEVERITY_COLORS.CRITICAL }} />
-              <span>Critical</span>
+              <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ background: SEVERITY_COLORS.CRITICAL }} />
+              <span className="font-medium text-stone-800">Critical (≥10 cases / Outbreak)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ background: SEVERITY_COLORS.HIGH }} />
-              <span>High</span>
+              <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ background: SEVERITY_COLORS.HIGH }} />
+              <span className="font-medium text-stone-800">High (6-9 cases / Investigation)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ background: SEVERITY_COLORS.MEDIUM }} />
-              <span>Medium</span>
+              <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ background: SEVERITY_COLORS.MEDIUM }} />
+              <span className="font-medium text-stone-800">Medium (4-5 cases)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ background: SEVERITY_COLORS.LOW }} />
-              <span>Low</span>
+              <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ background: SEVERITY_COLORS.LOW }} />
+              <span className="font-medium text-stone-800">Low (3 cases)</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ background: SEVERITY_COLORS.POTENTIAL }} />
-              <span>Potential</span>
+              <div className="w-3.5 h-3.5 rounded-full shadow-sm" style={{ background: SEVERITY_COLORS.POTENTIAL }} />
+              <span className="font-medium text-stone-800">Potential Surveillance</span>
             </div>
           </div>
         </CardContent>
@@ -230,25 +284,41 @@ export function AdminMap() {
             <p className="text-sm text-stone-500">No clusters detected yet.</p>
           ) : (
             <div className="space-y-3">
-              {visibleClusters.map((cluster) => (
-                <div key={cluster.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="w-3 h-3 rounded-full"
-                      style={{ background: SEVERITY_COLORS[cluster.status.toUpperCase()] || SEVERITY_COLORS.POTENTIAL }}
-                    />
-                    <div>
-                      <p className="font-medium">{cluster.disease}</p>
-                      <p className="text-sm text-stone-500">
-                        {cluster.district} • {cluster.reportCount} cases • {cluster.radiusKm} km radius
-                      </p>
+              {visibleClusters.map((cluster) => {
+                const color = getClusterColor(cluster)
+                return (
+                  <div key={cluster.id} className="flex items-center justify-between p-3.5 bg-stone-50 rounded-xl hover:bg-stone-100/70 transition-colors">
+                    <div className="flex items-center gap-3.5">
+                      <span
+                        className="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-sm"
+                        style={{ background: color }}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-stone-900">{cluster.disease}</p>
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase"
+                            style={{ background: color }}
+                          >
+                            {cluster.severity}
+                          </span>
+                          {cluster.status && cluster.status !== 'POTENTIAL' && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-stone-200 text-stone-700">
+                              {cluster.status.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-stone-500 mt-0.5">
+                          {cluster.district}, {cluster.state} • {cluster.reportCount} cases • {cluster.radiusKm} km radius
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-xs text-stone-400 font-medium whitespace-nowrap">
+                      {formatDate(cluster.createdAt)}
+                    </span>
                   </div>
-                  <span className="text-xs text-stone-400">
-                    {formatDate(cluster.createdAt)}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
