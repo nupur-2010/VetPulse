@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { PastoralScene, CowIcon } from '@/components/ui/PastoralScene'
 import { useAuthStore } from '@/store/auth'
+import { authApi } from '@/services/api'
 import {
   ArrowRight,
   CheckCircle2,
@@ -87,7 +88,17 @@ export function LandingPage() {
                   </Link>
                   <Button
                     variant="ghost"
-                    onClick={logout}
+                    onClick={async () => {
+                      const refreshToken = useAuthStore.getState().refreshToken
+                      if (refreshToken) {
+                        try {
+                          await authApi.logout(refreshToken)
+                        } catch {
+                          // ignore network errors
+                        }
+                      }
+                      logout()
+                    }}
                     className="text-xs font-semibold text-stone-500 hover:text-red-600 px-2.5 py-1.5"
                     title="Sign Out"
                   >

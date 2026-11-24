@@ -146,7 +146,12 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!storedToken || storedToken.expiresAt < new Date()) {
+    if (!storedToken) {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      await prisma.refreshToken.delete({ where: { id: storedToken.id } }).catch(() => {});
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
@@ -232,7 +237,9 @@ export class AuthService {
 
   private async saveRefreshToken(userId: string, token: string): Promise<void> {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    const daysMatch = typeof config.jwt.refreshExpiresIn === 'string' && config.jwt.refreshExpiresIn.match(/^(\d+)d$/);
+    const days = daysMatch ? parseInt(daysMatch[1], 10) : 7;
+    expiresAt.setDate(expiresAt.getDate() + days);
 
     await prisma.refreshToken.create({
       data: { userId, token, expiresAt },

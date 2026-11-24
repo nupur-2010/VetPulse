@@ -7,10 +7,12 @@ interface AuthState {
   farmerProfile: FarmerProfile | null
   vetProfile: VetProfile | null
   accessToken: string | null
+  refreshToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (data: AuthResponse) => void
   logout: () => void
+  setTokens: (accessToken: string, refreshToken?: string) => void
   setLoading: (loading: boolean) => void
   updateFarmerProfile: (profile: Partial<FarmerProfile>) => void
   updateVetProfile: (profile: Partial<VetProfile>) => void
@@ -23,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
       farmerProfile: null,
       vetProfile: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
 
@@ -32,9 +35,18 @@ export const useAuthStore = create<AuthState>()(
           farmerProfile: data.farmerProfile || null,
           vetProfile: data.vetProfile || null,
           accessToken: data.accessToken,
+          refreshToken: data.refreshToken || null,
           isAuthenticated: true,
           isLoading: false,
         })
+      },
+
+      setTokens: (accessToken: string, refreshToken?: string) => {
+        set((state) => ({
+          accessToken,
+          refreshToken: refreshToken !== undefined ? refreshToken : state.refreshToken,
+          isAuthenticated: true,
+        }))
       },
 
       logout: () => {
@@ -43,6 +55,7 @@ export const useAuthStore = create<AuthState>()(
           farmerProfile: null,
           vetProfile: null,
           accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
         })
@@ -75,6 +88,7 @@ export const useAuthStore = create<AuthState>()(
         farmerProfile: state.farmerProfile,
         vetProfile: state.vetProfile,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

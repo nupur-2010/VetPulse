@@ -36,7 +36,24 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor for error handling and data unwrapping
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: string | null) => void
+  reject: (error: any) => void
+}> = []
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
+// Response interceptor for error handling, data unwrapping, and automatic token refresh
 api.interceptors.response.use(
   (response) => {
     // If response has { success: true, data: actualData }, unwrap it for frontend compatibility
@@ -46,12 +63,91 @@ api.interceptors.response.use(
     return response
   },
   async (error) => {
-    if (error.response?.status === 401) {
-      // Token expired, logout
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+    const originalRequest = error.config
+
+    if (!error.response || error.response.status !== 401) {
+      return Promise.reject(error)
     }
-    return Promise.reject(error)
+
+    const url = originalRequest?.url || ''
+
+    // Do not attempt token refresh for login or register endpoints
+    if (url.includes('/auth/login') || url.includes('/auth/register')) {
+      return Promise.reject(error)
+    }
+
+    // If the refresh token request itself failed with 401, or if request was already retried
+    if (url.includes('/auth/refresh-token') || originalRequest?._retry) {
+      useAuthStore.getState().logout()
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && window.location.pathname !== '/') {
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
+    }
+
+    const currentRefreshToken = useAuthStore.getState().refreshToken
+    if (!currentRefreshToken) {
+      useAuthStore.getState().logout()
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && window.location.pathname !== '/') {
+        window.location.href = '/login'
+      }
+      return Promise.reject(error)
+    }
+
+    if (isRefreshing) {
+      return new Promise<string | null>((resolve, reject) => {
+        failedQueue.push({ resolve, reject })
+      })
+        .then((token) => {
+          if (token && originalRequest?.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+          }
+          return api(originalRequest)
+        })
+        .catch((err) => Promise.reject(err))
+    }
+
+    if (originalRequest) {
+      originalRequest._retry = true
+    }
+    isRefreshing = true
+
+    try {
+      // Call refresh endpoint directly using raw axios to avoid interceptor recursion
+      const response = await axios.post('/api/auth/refresh-token', {
+        refreshToken: currentRefreshToken,
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const responseData = response.data?.data || response.data
+      const newAccessToken = responseData?.accessToken
+      const newRefreshToken = responseData?.refreshToken || currentRefreshToken
+
+      if (!newAccessToken) {
+        throw new Error('No access token returned from refresh endpoint')
+      }
+
+      useAuthStore.getState().setTokens(newAccessToken, newRefreshToken)
+
+      if (originalRequest?.headers) {
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+      }
+
+      processQueue(null, newAccessToken)
+      return api(originalRequest)
+    } catch (refreshError) {
+      processQueue(refreshError, null)
+      useAuthStore.getState().logout()
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register' && window.location.pathname !== '/') {
+        window.location.href = '/login'
+      }
+      return Promise.reject(refreshError)
+    } finally {
+      isRefreshing = false
+    }
   }
 )
 
@@ -67,8 +163,9 @@ export const authApi = {
     return response.data
   },
 
-  logout: async (): Promise<void> => {
-    await api.post('/auth/logout')
+  logout: async (refreshToken?: string): Promise<void> => {
+    const token = refreshToken || useAuthStore.getState().refreshToken
+    await api.post('/auth/logout', { refreshToken: token || undefined })
   },
 
   getProfile: async (): Promise<AuthResponse> => {
@@ -76,8 +173,8 @@ export const authApi = {
     return response.data
   },
 
-  refreshToken: async (refreshToken: string): Promise<{ accessToken: string }> => {
-    const response = await api.post<{ accessToken: string }>('/auth/refresh-token', { refreshToken })
+  refreshToken: async (refreshToken: string): Promise<{ accessToken: string; refreshToken?: string }> => {
+    const response = await api.post<{ accessToken: string; refreshToken?: string }>('/auth/refresh-token', { refreshToken })
     return response.data
   },
 
