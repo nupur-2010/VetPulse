@@ -1,6 +1,7 @@
 import prisma from '../config/database.js';
 import { AnalyticsQuery, ClusterQuery, OutbreakAlertInput, UserManagementQuery } from '../validators/index.js';
 import { NotFoundError } from '../errors/index.js';
+import { outbreakDetectionService } from './outbreak-detection.service.js';
 
 export class AnalyticsService {
   async getReportStats(query: AnalyticsQuery): Promise<any> {
@@ -60,7 +61,15 @@ export class AnalyticsService {
     const where: any = {};
     if (disease) where.disease = disease;
     if (status) where.status = status;
-    const clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
+
+    let clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
+
+    // Lazily run DBSCAN so the map shows clusters without a manual trigger on first load.
+    if (clusters.length === 0) {
+      await outbreakDetectionService.detectClusters();
+      clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
+    }
+
     if (minReports) return clusters.filter(c => c.reportCount >= minReports);
     return clusters;
   }

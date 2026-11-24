@@ -302,8 +302,11 @@ export const analyticsApi = {
   },
 
   getClusters: async (): Promise<{ clusters: OutbreakCluster[] }> => {
-    const response = await api.get<{ clusters: OutbreakCluster[] }>('/analytics/clusters')
-    return response.data
+    const response = await api.get<{ clusters: OutbreakCluster[] } | OutbreakCluster[]>('/analytics/clusters')
+    const data = response.data as any
+    // Backend returns a plain array from the DBSCAN service; normalize to { clusters }
+    const list = Array.isArray(data) ? data : data?.clusters || []
+    return { clusters: list }
   },
 
   getCluster: async (id: string): Promise<OutbreakCluster> => {
@@ -318,7 +321,9 @@ export const analyticsApi = {
 
   detectOutbreaks: async (): Promise<{ triggered: boolean; clustersCreated: number }> => {
     const response = await api.post<{ triggered: boolean; clustersCreated: number }>('/analytics/detect-outbreaks')
-    return response.data
+    const data = response.data as any
+    const clusters = Array.isArray(data) ? data : data?.clusters || []
+    return { triggered: clusters.length > 0, clustersCreated: Array.isArray(data) ? data.length : (data?.clustersCreated ?? 0) }
   },
 
   getAlerts: async (): Promise<{ alerts: Alert[] }> => {

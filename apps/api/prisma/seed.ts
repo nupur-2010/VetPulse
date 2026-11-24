@@ -175,6 +175,70 @@ async function main() {
     console.log('Created health report:', report.reportNumber)
   }
 
+  // --- Mock geo-distributed health reports so DBSCAN clusters are visible on the map ---
+  const existingReportCount = await prisma.healthReport.count()
+  if (existingReportCount < 25 && farmerProfile?.farm) {
+    const cattle = await prisma.cattle.findMany({ where: { ownerId: farmerProfile.id }, take: 2 })
+    // Each cluster: a district center with N nearby reports of the same disease (within DBSCAN eps)
+    const clusterDefs = [
+      { district: 'Pune', lat: 18.5204, lng: 73.8567, disease: 'Foot-and-Mouth Disease', count: 5, jitter: 0.02, confidence: 0.88 },
+      { district: 'Nagpur', lat: 21.1458, lng: 79.0882, disease: 'Lumpy Skin Disease', count: 4, jitter: 0.018, confidence: 0.84 },
+      { district: 'Aurangabad', lat: 19.8762, lng: 75.8815, disease: 'Bovine Respiratory Disease', count: 4, jitter: 0.02, confidence: 0.81 },
+      { district: 'Kolhapur', lat: 16.705, lng: 74.2433, disease: 'Mastitis', count: 3, jitter: 0.015, confidence: 0.79 },
+      { district: 'Nashik', lat: 19.9975, lng: 73.7898, disease: 'Anthrax', count: 3, jitter: 0.014, confidence: 0.74 },
+      { district: 'Satara', lat: 17.6805, lng: 74.0183, disease: 'Clostridial Diseases', count: 3, jitter: 0.013, confidence: 0.72 },
+      { district: 'Solapur', lat: 17.6599, lng: 75.9064, disease: 'Theileriosis', count: 3, jitter: 0.014, confidence: 0.77 },
+    ]
+
+    for (const def of clusterDefs) {
+      for (let i = 0; i < def.count; i++) {
+        const lat = def.lat + (Math.random() - 0.5) * 2 * def.jitter
+        const lng = def.lng + (Math.random() - 0.5) * 2 * def.jitter
+        const cattleForReport = cattle[i % cattle.length]
+        await prisma.healthReport.create({
+          data: {
+            reportNumber: `RPT-MOCK-${def.district}-${i + 1}`,
+            cattleId: cattleForReport.id,
+            farmerId: farmerProfile.id,
+            state: 'Maharashtra',
+            district: def.district,
+            village: `${def.district} Village ${i + 1}`,
+            latitude: lat,
+            longitude: lng,
+            temperature: 39 + Math.round(Math.random() * 20) / 10,
+            symptomDuration: `${Math.round(Math.random() * 3) + 1} days`,
+            severity: ['mild', 'moderate', 'severe'][Math.floor(Math.random() * 3)] as any,
+            consultationRequested: false,
+            status: 'AI_COMPLETED',
+            symptoms: {
+              create: [
+                { symptomName: 'Fever', symptomGroup: 'General' },
+                { symptomName: 'Reduced appetite', symptomGroup: 'General' },
+              ],
+            },
+            prediction: {
+              create: {
+                predictionId: `PRED-MOCK-${def.district}-${i + 1}`,
+                provider: 'mock',
+                modelStatus: 'MOCK',
+                isSimulated: true,
+                predictedDisease: def.disease,
+                confidence: def.confidence + (Math.random() - 0.5) * 0.06,
+                confidenceInterpretation: 'High',
+                severity: 'high',
+                supportingSymptoms: ['Fever', 'Reduced appetite'],
+                recommendations: ['Arrange veterinary examination', 'Isolate affected animal'],
+                disclaimer: 'This is a simulated AI prediction for demonstration purposes only.',
+                status: 'COMPLETED',
+              },
+            },
+          },
+        })
+      }
+    }
+    console.log('Created geo-distributed mock reports for DBSCAN cluster visualization')
+  }
+
   console.log('Seed completed successfully!')
 }
 
