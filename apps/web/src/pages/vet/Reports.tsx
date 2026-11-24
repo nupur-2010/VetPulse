@@ -58,7 +58,7 @@ export function VetReports() {
                   <div>
                     <p className="font-semibold">{report.reportNumber}</p>
                     <p className="text-sm text-stone-500">
-                      {report.cattle?.name || 'Unknown'} • {report.breed} • {report.district}
+                      {report.cattle?.name || 'Unknown'} • {report.cattle?.breed || 'Unknown breed'} • {report.district}
                     </p>
                   </div>
                   <div className="text-right">

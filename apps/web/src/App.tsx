@@ -19,6 +19,10 @@ import { AdminDashboard } from '@/pages/admin/Dashboard'
 import { AdminReports } from '@/pages/admin/Reports'
 import { AdminMap } from '@/pages/admin/Map'
 import { AdminOutbreaks } from '@/pages/admin/Outbreaks'
+import { AdminUsersPage } from '@/pages/admin/Users'
+import { AdminProfilePage } from '@/pages/admin/Profile'
+import { FarmerProfilePage } from '@/pages/farmer/Profile'
+import { VetProfilePage } from '@/pages/vet/Profile'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
 export default function App() {
@@ -44,6 +48,7 @@ export default function App() {
         <Route path="reports/new" element={<HealthReportForm />} />
         <Route path="reports/:id" element={<ReportDetail />} />
         <Route path="assessments/:id" element={<AssessmentResult />} />
+        <Route path="profile" element={<FarmerProfilePage />} />
       </Route>
       
       {/* Protected vet routes */}
@@ -52,14 +57,17 @@ export default function App() {
         <Route path="reports" element={<VetReports />} />
         <Route path="reports/:id" element={<VetReportReview />} />
         <Route path="consultations" element={<VetConsultations />} />
+        <Route path="profile" element={<VetProfilePage />} />
       </Route>
       
       {/* Protected admin routes */}
       <Route path="/admin" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
         <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsersPage />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="map" element={<AdminMap />} />
         <Route path="outbreaks" element={<AdminOutbreaks />} />
+        <Route path="profile" element={<AdminProfilePage />} />
       </Route>
       
       {/* Catch all */}

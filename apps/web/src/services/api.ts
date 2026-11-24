@@ -334,13 +334,23 @@ export const analyticsApi = {
 
 // Admin API
 export const adminApi = {
-  getUsers: async (params?: { role?: string; isActive?: boolean }): Promise<{ users: any[]; total: number }> => {
-    const response = await api.get<{ users: any[]; total: number }>('/admin/users', { params })
-    return response.data
+  getUsers: async (params?: { role?: string; isActive?: boolean; page?: number; limit?: number; search?: string }): Promise<{ users: any[]; total: number }> => {
+    const response = await api.get('/admin/users', { params })
+    const res = response.data as any
+    if (res?.data && Array.isArray(res.data)) {
+      return { users: res.data, total: res.pagination?.total ?? res.data.length }
+    }
+    if (res?.users && Array.isArray(res.users)) {
+      return { users: res.users, total: res.total ?? res.users.length }
+    }
+    if (Array.isArray(res)) {
+      return { users: res, total: res.length }
+    }
+    return { users: [], total: 0 }
   },
 
-  toggleUserStatus: async (userId: string): Promise<void> => {
-    await api.patch(`/admin/users/${userId}`)
+  toggleUserStatus: async (userId: string, isActive?: boolean): Promise<void> => {
+    await api.patch(`/admin/users/${userId}`, { isActive })
   },
 
   getDashboard: async (): Promise<DashboardStats> => {

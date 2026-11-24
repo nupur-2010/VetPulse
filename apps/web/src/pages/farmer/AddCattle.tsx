@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Camera, X, Image as ImageIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -43,6 +44,10 @@ const BREEDS = [
 
 export function AddCattle() {
   const navigate = useNavigate()
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -55,10 +60,45 @@ export function AddCattle() {
     },
   })
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhotoFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const removePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+  }
+
   const createMutation = useMutation({
-    mutationFn: (data: CreateCattleRequest) => cattleApi.create(data),
+    mutationFn: async (data: CreateCattleRequest) => {
+      setIsUploading(true)
+      const created = await cattleApi.create(data)
+      if (photoFile && created?.id) {
+        try {
+          await cattleApi.addPhoto(created.id, photoFile)
+        } catch (err) {
+          console.warn('Photo upload to backend warning:', err)
+        }
+      }
+      if (photoPreview && created?.id) {
+        localStorage.setItem(`cattle_photo_${created.id}`, photoPreview)
+      }
+      return created
+    },
     onSuccess: () => {
+      setIsUploading(false)
       navigate('/farmer/cattle')
+    },
+    onError: () => {
+      setIsUploading(false)
     },
   })
 
@@ -78,20 +118,67 @@ export function AddCattle() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 page-enter">
       <div className="flex items-center gap-4">
-        <Link to="/farmer/cattle" className="p-2 hover:bg-stone-100 rounded-lg">
-          <ArrowLeft className="w-5 h-5" />
+        <Link to="/farmer/cattle" className="p-2 hover:bg-stone-100 rounded-xl transition-colors">
+          <ArrowLeft className="w-5 h-5 text-stone-700" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-stone-900">Register New Cattle</h1>
-          <p className="text-stone-600">Add a new animal to your farm</p>
+          <p className="text-stone-600 text-sm">Add a new animal to your herd with tag and profile photo</p>
         </div>
       </div>
 
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Cattle Profile Photo Upload Field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-stone-800">
+                Cattle Profile Photo
+              </label>
+              <div className="flex flex-col sm:flex-row items-center gap-5 p-4 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-200">
+                {photoPreview ? (
+                  <div className="relative w-32 h-32 rounded-2xl overflow-hidden shadow-md group">
+                    <img src={photoPreview} alt="Cattle Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-600 text-white rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-2xl bg-stone-100 border border-stone-200 flex flex-col items-center justify-center text-stone-400">
+                    <ImageIcon className="w-10 h-10 mb-1" />
+                    <span className="text-[11px] font-medium">No photo</span>
+                  </div>
+                )}
+
+                <div className="flex-1 text-center sm:text-left space-y-2">
+                  <p className="text-xs text-stone-600">
+                    Upload a clear photo of the cattle face or side profile for veterinary identification and health records.
+                  </p>
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-emerald-50 text-emerald-950 font-bold text-xs rounded-xl border border-stone-200 hover:border-emerald-300 shadow-sm cursor-pointer transition-all">
+                    <Camera className="w-4 h-4 text-emerald-700" />
+                    {photoPreview ? 'Change Photo' : 'Select Cattle Photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoSelect}
+                    />
+                  </label>
+                  {photoFile && (
+                    <span className="block text-[11px] text-emerald-700 font-semibold truncate max-w-xs">
+                      {photoFile.name} ({(photoFile.size / 1024).toFixed(0)} KB)
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <Input
                 label="Tag Number *"
@@ -158,13 +245,13 @@ export function AddCattle() {
             <div>
               <Input
                 label="Identification Marks"
-                placeholder="e.g., White spot on left ear"
+                placeholder="e.g., White star patch on forehead, notched left ear"
                 {...register('identificationMarks')}
               />
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" isLoading={createMutation.isPending}>
+              <Button type="submit" isLoading={createMutation.isPending || isUploading} className="btn-pasture">
                 <Save className="w-4 h-4 mr-2" />
                 Register Cattle
               </Button>

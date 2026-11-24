@@ -94,6 +94,8 @@ export interface Cattle {
   identificationMarks?: string
   pregnancyStatus: PregnancyStatus
   isActive: boolean
+  photos?: CattlePhoto[]
+  photoUrl?: string
   archivedAt?: string
   createdAt: string
   updatedAt: string

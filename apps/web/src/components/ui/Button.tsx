@@ -9,20 +9,20 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
-    
+    const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:-translate-y-0.5'
+
     const variants = {
-      primary: 'bg-primary text-white hover:bg-primary-700 focus:ring-primary-500',
-      secondary: 'bg-secondary text-white hover:bg-secondary-600 focus:ring-secondary-500',
-      outline: 'border-2 border-primary text-primary hover:bg-primary-50 focus:ring-primary-500',
-      ghost: 'text-primary hover:bg-primary-50 focus:ring-primary-500',
-      danger: 'bg-critical text-white hover:bg-red-700 focus:ring-red-500',
+      primary: 'bg-gradient-to-r from-primary to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 focus:ring-primary-500 shadow-md hover:shadow-lg',
+      secondary: 'bg-gradient-to-r from-grass to-grass-600 text-white hover:from-grass-600 hover:to-grass-700 focus:ring-grass-500 shadow-md hover:shadow-lg',
+      outline: 'border-2 border-primary text-primary hover:bg-primary-50 focus:ring-primary-500 hover:shadow-md',
+      ghost: 'text-primary hover:bg-primary-50/60 focus:ring-primary-500',
+      danger: 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-500 shadow-md hover:shadow-lg',
     }
-    
+
     const sizes = {
-      sm: 'px-3 py-1.5 text-sm',
-      md: 'px-4 py-2 text-sm',
-      lg: 'px-6 py-3 text-base',
+      sm: 'px-3.5 py-1.5 text-sm',
+      md: 'px-5 py-2.5 text-sm',
+      lg: 'px-7 py-3.5 text-base',
     }
 
     return (
