@@ -1,8 +1,8 @@
 import prisma from '../config/database.js';
 
 const EARTH_RADIUS_KM = 6371;
-const CLUSTER_RADIUS_KM = 15; // DBSCAN eps (km)
-const MIN_CASES_FOR_CLUSTER = 3; // DBSCAN minPts
+const CLUSTER_RADIUS_KM = 5; // DBSCAN eps (km) - localized epidemiological containment zone
+const MIN_CASES_FOR_CLUSTER = 3; // DBSCAN minPts - minimum 3 cases to form a low-severity cluster
 
 interface GeoPoint {
   id: string;
