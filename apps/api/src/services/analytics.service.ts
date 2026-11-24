@@ -1,6 +1,7 @@
 import prisma from '../config/database.js';
 import { AnalyticsQuery, ClusterQuery, OutbreakAlertInput, UserManagementQuery } from '../validators/index.js';
 import { NotFoundError } from '../errors/index.js';
+import { outbreakDetectionService } from './outbreak-detection.service.js';
 
 export class AnalyticsService {
   async getReportStats(query: AnalyticsQuery): Promise<any> {
@@ -60,7 +61,15 @@ export class AnalyticsService {
     const where: any = {};
     if (disease) where.disease = disease;
     if (status) where.status = status;
-    const clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
+
+    let clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
+
+    // Lazily run DBSCAN so the map shows clusters without a manual trigger on first load.
+    if (clusters.length === 0) {
+      await outbreakDetectionService.detectClusters();
+      clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
+    }
+
     if (minReports) return clusters.filter(c => c.reportCount >= minReports);
     return clusters;
   }
@@ -97,7 +106,52 @@ export class AnalyticsService {
     if (search) where.email = { contains: search, mode: 'insensitive' };
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({ where, select: { id: true, email: true, role: true, isActive: true, emailVerified: true, createdAt: true, farmerProfile: { select: { firstName: true, lastName: true, state: true, district: true } }, vetProfile: { select: { firstName: true, lastName: true, specialization: true } } }, skip, take: limit }),
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          isActive: true,
+          emailVerified: true,
+          createdAt: true,
+          farmerProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              address: true,
+              state: true,
+              district: true,
+              village: true,
+              createdAt: true,
+            },
+          },
+          vetProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              specialization: true,
+              licenseNumber: true,
+              licenseState: true,
+              yearsOfExperience: true,
+              clinicName: true,
+              clinicAddress: true,
+              consultationFee: true,
+              rating: true,
+              totalReviews: true,
+              isAvailable: true,
+              createdAt: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
       prisma.user.count({ where }),
     ]);
     return { data: users, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
