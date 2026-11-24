@@ -22,12 +22,54 @@ export class ConsultationService {
   }
 
   async createFarmerRequest(farmerId: string, reportId: string, notes?: string): Promise<any> {
-    const report = await prisma.healthReport.findFirst({ where: { id: reportId, farmerId } });
+    const report = await prisma.healthReport.findUnique({
+      where: { id: reportId },
+      include: { prediction: true },
+    });
     if (!report) throw new NotFoundError('Health report');
 
-    let vet = await prisma.vetProfile.findFirst({
-      where: { isAvailable: true },
+    // Consultation requests are only permitted when confidence is medium or high (>= 0.4)
+    if (report.prediction && report.prediction.confidence !== null && report.prediction.confidence !== undefined) {
+      if (report.prediction.confidence < 0.4) {
+        throw new ForbiddenError('Consultation requests can only be submitted for reports with medium or high AI confidence');
+      }
+    }
+
+    // Check if consultation is already requested
+    const existing = await prisma.consultation.findFirst({
+      where: { reportId },
+      include: {
+        report: { include: { symptoms: true, photos: true, prediction: true, cattle: true } },
+        vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+        farmer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+      },
     });
+
+    if (existing) {
+      await prisma.healthReport.update({
+        where: { id: reportId },
+        data: { consultationRequested: true },
+      });
+      return existing;
+    }
+
+    // Match with a veterinarian from the same state
+    let vet = await prisma.vetProfile.findFirst({
+      where: {
+        isAvailable: true,
+        licenseState: { equals: report.state, mode: 'insensitive' },
+      },
+    });
+    if (!vet) {
+      vet = await prisma.vetProfile.findFirst({
+        where: {
+          licenseState: { equals: report.state, mode: 'insensitive' },
+        },
+      });
+    }
+    if (!vet) {
+      vet = await prisma.vetProfile.findFirst({ where: { isAvailable: true } });
+    }
     if (!vet) {
       vet = await prisma.vetProfile.findFirst();
     }
@@ -38,13 +80,13 @@ export class ConsultationService {
     const consultation = await prisma.consultation.create({
       data: {
         reportId,
-        farmerId,
+        farmerId: report.farmerId,
         vetId: vet.id,
         status: 'REQUESTED',
         reason: notes || 'Consultation requested for health report',
       },
       include: {
-        report: { include: { symptoms: true, prediction: true, cattle: true } },
+        report: { include: { symptoms: true, photos: true, prediction: true, cattle: true } },
         vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
         farmer: { select: { id: true, firstName: true, lastName: true, phone: true } },
       },
@@ -60,13 +102,67 @@ export class ConsultationService {
 
   async findAllForVet(vetId: string, query: ConsultationListQuery): Promise<PaginatedResponse<any>> {
     const { page, limit, status, sortBy, sortOrder } = query;
-    const where: any = { vetId };
+    const vet = await prisma.vetProfile.findUnique({ where: { id: vetId } });
+    const vetState = vet?.licenseState;
+
+    // Automatically sync any reports that have consultationRequested=true in this state
+    try {
+      const syncWhere: any = { consultationRequested: true, consultations: { none: {} } };
+      if (vetState) {
+        syncWhere.state = { equals: vetState, mode: 'insensitive' };
+      }
+      const unlinkedReports = await prisma.healthReport.findMany({
+        where: syncWhere,
+        include: { farmer: true },
+      });
+
+      for (const rep of unlinkedReports) {
+        await prisma.consultation.create({
+          data: {
+            reportId: rep.id,
+            farmerId: rep.farmerId,
+            vetId,
+            status: 'REQUESTED',
+            reason: rep.additionalNotes || 'Consultation requested for health report',
+          },
+        });
+      }
+    } catch (e) {
+      console.error('Error auto-syncing consultations for vet:', e);
+    }
+
+    const where: any = {};
+    if (vetState) {
+      where.OR = [
+        { vetId },
+        { report: { state: { equals: vetState, mode: 'insensitive' } } },
+      ];
+    } else {
+      where.vetId = vetId;
+    }
     if (status) where.status = status;
     const orderBy: any = sortBy === 'scheduledAt' ? { scheduledAt: sortOrder } : { createdAt: sortOrder };
     const skip = (page - 1) * limit;
 
     const [consultations, total] = await Promise.all([
-      prisma.consultation.findMany({ where, include: { report: { include: { symptoms: true, cattle: true } }, farmer: true }, orderBy, skip, take: limit }),
+      prisma.consultation.findMany({
+        where,
+        include: {
+          report: {
+            include: {
+              symptoms: true,
+              photos: true,
+              prediction: true,
+              cattle: true,
+            },
+          },
+          farmer: true,
+          vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
       prisma.consultation.count({ where }),
     ]);
 

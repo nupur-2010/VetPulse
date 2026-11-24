@@ -73,6 +73,16 @@ export class CattleController {
     }
   }
 
+  async getHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const farmerId = req.user!.farmerProfileId!;
+      const history = await cattleService.getHistory(req.params.cattleId, farmerId);
+      res.json({ success: true, data: history });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async addPhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const farmerId = req.user!.farmerProfileId!;

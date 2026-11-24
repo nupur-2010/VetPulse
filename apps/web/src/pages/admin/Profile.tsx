@@ -10,9 +10,7 @@ import {
   AlertTriangle, 
   FileText, 
   Lock, 
-  Activity, 
-  Terminal, 
-  Database 
+  Activity 
 } from 'lucide-react'
 
 export function AdminProfilePage() {

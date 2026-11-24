@@ -161,7 +161,7 @@ export const reportsApi = {
       })
     }
     const response = await api.post<HealthReport>('/reports', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: { 'Content-Type': undefined },
     })
     return response.data
   },

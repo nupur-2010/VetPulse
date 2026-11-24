@@ -33,6 +33,9 @@ export interface VetProfile {
   phone?: string
   specialization?: string
   licenseNumber?: string
+  licenseState?: string
+  clinicName?: string
+  clinicAddress?: string
   yearsOfExperience?: number
   rating?: number
   totalReviews?: number
@@ -99,6 +102,8 @@ export interface Cattle {
   archivedAt?: string
   createdAt: string
   updatedAt: string
+  healthReports?: HealthReport[]
+  farm?: { id?: string; name?: string; address?: string }
 }
 
 export interface CattlePhoto {
@@ -157,6 +162,7 @@ export interface HealthReport {
   createdAt: string
   updatedAt: string
   cattle?: Cattle
+  farmer?: FarmerProfile
   symptoms?: HealthReportSymptom[]
   photos?: HealthReportPhoto[]
   prediction?: Prediction
@@ -191,6 +197,7 @@ export interface CreateReportRequest {
   village?: string
   latitude?: number
   longitude?: number
+  location?: string
   temperature?: number
   symptomDuration: string
   severity: string
@@ -230,20 +237,25 @@ export interface Prediction {
   errorMessage?: string
   createdAt: string
   updatedAt: string
+  vetReviews?: PredictionReview[]
 }
 
 export interface PredictionReview {
   id: string
-  reportId: string
+  reportId?: string
   vetId: string
   decision: string
-  suspectedDisease?: string
+  notes?: string
   remarks?: string
+  alternativeDiagnosis?: string
+  suspectedDisease?: string
+  recommendedActions?: string
   clinicalFindings?: string
   suggestedNextSteps?: string
   followUpDate?: string
   treatmentInfo?: string
   createdAt: string
+  vet?: { id: string; firstName: string; lastName: string; specialization?: string }
 }
 
 export interface Consultation {
@@ -253,9 +265,13 @@ export interface Consultation {
   farmerId: string
   status: string
   notes?: string
+  reason?: string
   farmerName?: string
   reportNumber?: string
   createdAt: string
+  report?: HealthReport
+  farmer?: FarmerProfile
+  vet?: VetProfile
 }
 
 export interface OutbreakCluster {

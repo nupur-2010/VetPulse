@@ -29,9 +29,9 @@ router.get('/:reportId', authorize('FARMER', 'VETERINARIAN', 'ADMIN'), validateP
 router.patch('/:reportId', authorize('FARMER'), validateParams(reportIdSchema), validateBody(updateHealthReportSchema), (req, res, next) => healthReportController.update(req, res, next));
 router.get('/:reportId/prediction', authorize('FARMER', 'VETERINARIAN', 'ADMIN'), validateParams(reportIdSchema), (req, res, next) => healthReportController.getPrediction(req, res, next));
 
-router.post('/:reportId/consultation', authorize('FARMER'), validateParams(reportIdSchema), async (req, res, next) => {
+router.post('/:reportId/consultation', authorize('FARMER', 'ADMIN'), validateParams(reportIdSchema), async (req, res, next) => {
   try {
-    const farmerId = req.user!.farmerProfileId!;
+    const farmerId = req.user!.farmerProfileId || '';
     const consultation = await consultationService.createFarmerRequest(farmerId, req.params.reportId, req.body.notes);
     res.status(201).json({ success: true, data: consultation });
   } catch (error) {
