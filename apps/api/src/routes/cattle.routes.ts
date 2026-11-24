@@ -16,5 +16,6 @@ router.delete('/:cattleId', validateParams(cattleIdSchema), (req, res, next) => 
 router.post('/:cattleId/photos', validateParams(cattleIdSchema), upload.single('photo'), (req, res, next) => cattleController.addPhoto(req, res, next));
 router.post('/:cattleId/vaccinations', validateParams(cattleIdSchema), validateBody(addVaccinationSchema), (req, res, next) => cattleController.addVaccination(req, res, next));
 router.get('/:cattleId/vaccinations', validateParams(cattleIdSchema), (req, res, next) => cattleController.getVaccinations(req, res, next));
+router.get('/:cattleId/history', validateParams(cattleIdSchema), (req, res, next) => cattleController.getHistory(req, res, next));
 
 export default router;
