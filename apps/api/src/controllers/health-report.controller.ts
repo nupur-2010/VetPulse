@@ -18,7 +18,8 @@ export class HealthReportController {
   async findAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const farmerId = req.user!.role === 'FARMER' ? req.user!.farmerProfileId : undefined;
-      const result = await healthReportService.findAll(farmerId, req.query as unknown as ReportListQuery);
+      const vetId = req.user!.role === 'VETERINARIAN' ? req.user!.vetProfileId : undefined;
+      const result = await healthReportService.findAll(farmerId, req.query as unknown as ReportListQuery, vetId);
       res.json({ success: true, ...result, reports: result.data, total: result.pagination.total });
     } catch (error) {
       next(error);

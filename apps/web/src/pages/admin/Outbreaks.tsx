@@ -29,17 +29,20 @@ interface ClusterRow {
 function normalize(raw: any): ClusterRow[] {
   const list: any[] = Array.isArray(raw) ? raw : raw?.clusters || []
   if (!Array.isArray(list)) return []
-  return list.map((c) => ({
-    id: c.id || '',
-    name: c.name || `${c.disease || 'Cluster'} Cluster`,
-    disease: c.disease || c.suspectedDisease || 'Unknown',
-    status: c.status || 'POTENTIAL',
-    district: c.district || '—',
-    state: c.state || '—',
-    reportCount: Number(c.reportCount ?? c.animalCount ?? 0),
-    radiusKm: Number(c.radiusKm ?? 10),
-    createdAt: c.createdAt || c.lastReportAt || new Date().toISOString(),
-  }))
+  return list.map((c) => {
+    const fallbackDistrict = c.name ? c.name.split(' ')[0] : 'Maharashtra'
+    return {
+      id: c.id || '',
+      name: c.name || `${c.disease || 'Cluster'} Cluster`,
+      disease: c.disease || c.suspectedDisease || 'Unknown',
+      status: c.status || 'POTENTIAL',
+      district: c.district && c.district !== '—' ? c.district : fallbackDistrict,
+      state: c.state && c.state !== '—' ? c.state : 'Maharashtra',
+      reportCount: Number(c.reportCount ?? c.animalCount ?? 0),
+      radiusKm: Number(c.radiusKm ?? 10),
+      createdAt: c.createdAt || c.lastReportAt || new Date().toISOString(),
+    }
+  })
 }
 
 export function AdminOutbreaks() {

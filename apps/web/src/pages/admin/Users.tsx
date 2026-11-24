@@ -258,7 +258,7 @@ export function AdminUsersPage() {
                   </div>
 
                   <Badge
-                    variant="default"
+                    variant={isVet ? 'default' : 'info'}
                     className={`text-[10px] uppercase font-bold shrink-0 ${
                       isVet
                         ? 'bg-teal-100 text-teal-900 border border-teal-300'

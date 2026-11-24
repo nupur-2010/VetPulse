@@ -66,7 +66,7 @@ export class HealthReportService {
     return this.findById(report.id);
   }
 
-  async findAll(farmerId: string | undefined, query: ReportListQuery): Promise<PaginatedResponse<any>> {
+  async findAll(farmerId: string | undefined, query: ReportListQuery, vetId?: string): Promise<PaginatedResponse<any>> {
     const { page, limit, status, state, district, disease, startDate, endDate, sortBy, sortOrder } = query;
     const skip = (page - 1) * limit;
 
@@ -74,8 +74,17 @@ export class HealthReportService {
     if (farmerId) {
       where.farmerId = farmerId;
     }
+
+    if (vetId) {
+      const vet = await prisma.vetProfile.findUnique({ where: { id: vetId } });
+      const vetState = vet?.licenseState;
+      if (vetState) {
+        where.state = { equals: vetState, mode: 'insensitive' };
+      }
+    }
+
     if (status) where.status = status;
-    if (state) where.state = state;
+    if (state && !where.state) where.state = state;
     if (district) where.district = district;
     if (disease) {
       where.prediction = { predictedDisease: { contains: disease, mode: 'insensitive' } };
@@ -97,9 +106,17 @@ export class HealthReportService {
         include: {
           symptoms: true,
           photos: true,
-          prediction: true,
-          cattle: { select: { id: true, tagNumber: true, name: true, breed: true } },
-          farmer: { select: { id: true, firstName: true, lastName: true, phone: true } },
+          prediction: {
+            include: {
+              vetReviews: {
+                include: {
+                  vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+                },
+              },
+            },
+          },
+          cattle: { select: { id: true, tagNumber: true, name: true, breed: true, gender: true, weight: true } },
+          farmer: { select: { id: true, firstName: true, lastName: true, phone: true, state: true, district: true, village: true } },
           _count: { select: { consultations: true } },
         },
         orderBy,
@@ -109,7 +126,15 @@ export class HealthReportService {
       prisma.healthReport.count({ where }),
     ]);
 
-    return { data: reports, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const formattedReports = reports.map(r => {
+      const rep = r as any;
+      if (r.prediction?.vetReviews && r.prediction.vetReviews.length > 0) {
+        rep.vetReview = r.prediction.vetReviews[0];
+      }
+      return rep;
+    });
+
+    return { data: formattedReports, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findById(reportId: string, farmerId?: string): Promise<any> {
@@ -134,8 +159,8 @@ export class HealthReportService {
           },
         },
         consultations: { include: { vet: { select: { id: true, firstName: true, lastName: true } } } },
-        cattle: { select: { id: true, tagNumber: true, name: true, breed: true, gender: true, farm: { select: { name: true } } } },
-        farmer: { select: { id: true, firstName: true, lastName: true, phone: true, state: true, district: true } },
+        cattle: { select: { id: true, tagNumber: true, name: true, breed: true, gender: true, weight: true, dateOfBirth: true, estimatedAge: true, identificationMarks: true, pregnancyStatus: true, farm: { select: { name: true, address: true } } } },
+        farmer: { select: { id: true, firstName: true, lastName: true, phone: true, state: true, district: true, village: true, address: true } },
       },
     });
 

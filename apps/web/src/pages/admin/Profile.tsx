@@ -9,7 +9,7 @@ import {
   Map, 
   AlertTriangle, 
   FileText, 
-  Lock, 
+  Lock,
   Activity
 } from 'lucide-react'
 

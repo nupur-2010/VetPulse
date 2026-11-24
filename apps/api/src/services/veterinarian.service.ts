@@ -52,10 +52,27 @@ export class VeterinarianService {
   }
 
   async updateProfile(vetId: string, input: any): Promise<any> {
+    const data: any = { ...input };
+    if (input.state && !input.licenseState) {
+      data.licenseState = input.state;
+    }
     return prisma.vetProfile.update({
       where: { id: vetId },
-      data: input,
-      select: { id: true, firstName: true, lastName: true, specialization: true, clinicName: true, isAvailable: true },
+      data,
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        specialization: true,
+        licenseNumber: true,
+        licenseState: true,
+        clinicName: true,
+        clinicAddress: true,
+        consultationFee: true,
+        isAvailable: true,
+        yearsOfExperience: true,
+      },
     });
   }
 

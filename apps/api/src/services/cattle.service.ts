@@ -211,6 +211,43 @@ export class CattleService {
     });
   }
 
+  async getHistory(cattleId: string, farmerId: string): Promise<any[]> {
+    const cattle = await prisma.cattle.findFirst({
+      where: { id: cattleId, ownerId: farmerId },
+    });
+
+    if (!cattle) {
+      throw new NotFoundError('Cattle');
+    }
+
+    const reports = await prisma.healthReport.findMany({
+      where: { cattleId },
+      include: {
+        symptoms: true,
+        photos: true,
+        prediction: {
+          include: {
+            candidates: true,
+            vetReviews: {
+              include: {
+                vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reports.map(r => {
+      const rep = r as any;
+      if (r.prediction?.vetReviews && r.prediction.vetReviews.length > 0) {
+        rep.vetReview = r.prediction.vetReviews[0];
+      }
+      return rep;
+    });
+  }
+
   async addPhoto(cattleId: string, farmerId: string, photoUrl: string): Promise<any> {
     const cattle = await prisma.cattle.findFirst({
       where: { id: cattleId, ownerId: farmerId },

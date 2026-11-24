@@ -47,10 +47,10 @@ export class AuthService {
             phone: input.phone,
             specialization: input.specialization,
             licenseNumber: input.licenseNumber,
-            licenseState: input.licenseState,
+            licenseState: input.licenseState || input.state || 'Maharashtra',
             yearsOfExperience: input.yearsOfExperience,
             clinicName: input.clinicName,
-            clinicAddress: input.clinicAddress,
+            clinicAddress: input.clinicAddress || (input.district ? `${input.district}, ${input.state}` : undefined),
           },
         } : undefined,
       },
@@ -77,8 +77,8 @@ export class AuthService {
   async login(input: LoginInput): Promise<{ 
     user: AuthenticatedUser; 
     tokens: { accessToken: string; refreshToken: string };
-    farmerProfile?: { id: string; firstName: string; lastName: string } | null;
-    vetProfile?: { id: string; firstName: string; specialization: string | null } | null;
+    farmerProfile?: any;
+    vetProfile?: any;
   }> {
     const user = await prisma.user.findUnique({
       where: { email: input.email },
@@ -115,11 +115,27 @@ export class AuthService {
         id: user.farmerProfile.id,
         firstName: user.farmerProfile.firstName,
         lastName: user.farmerProfile.lastName,
+        phone: user.farmerProfile.phone || undefined,
+        state: user.farmerProfile.state,
+        district: user.farmerProfile.district,
+        village: user.farmerProfile.village || undefined,
       } : undefined,
       vetProfile: user.vetProfile ? {
         id: user.vetProfile.id,
+        userId: user.vetProfile.userId,
         firstName: user.vetProfile.firstName,
-        specialization: user.vetProfile.specialization,
+        lastName: user.vetProfile.lastName,
+        phone: user.vetProfile.phone || undefined,
+        specialization: user.vetProfile.specialization || undefined,
+        licenseNumber: user.vetProfile.licenseNumber || undefined,
+        licenseState: user.vetProfile.licenseState || undefined,
+        yearsOfExperience: user.vetProfile.yearsOfExperience || undefined,
+        clinicName: user.vetProfile.clinicName || undefined,
+        clinicAddress: user.vetProfile.clinicAddress || undefined,
+        consultationFee: user.vetProfile.consultationFee || undefined,
+        rating: user.vetProfile.rating || undefined,
+        totalReviews: user.vetProfile.totalReviews,
+        isAvailable: user.vetProfile.isAvailable,
       } : undefined,
     };
   }
@@ -130,7 +146,12 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!storedToken || storedToken.expiresAt < new Date()) {
+    if (!storedToken) {
+      throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      await prisma.refreshToken.delete({ where: { id: storedToken.id } }).catch(() => {});
       throw new UnauthorizedError('Invalid or expired refresh token');
     }
 
@@ -216,7 +237,9 @@ export class AuthService {
 
   private async saveRefreshToken(userId: string, token: string): Promise<void> {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    const daysMatch = typeof config.jwt.refreshExpiresIn === 'string' && config.jwt.refreshExpiresIn.match(/^(\d+)d$/);
+    const days = daysMatch ? parseInt(daysMatch[1], 10) : 7;
+    expiresAt.setDate(expiresAt.getDate() + days);
 
     await prisma.refreshToken.create({
       data: { userId, token, expiresAt },

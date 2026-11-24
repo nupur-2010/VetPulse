@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/index.js';
-import { RegisterInput, LoginInput, RefreshTokenInput, ChangePasswordInput } from '../validators/index.js';
+import { RegisterInput, LoginInput, RefreshTokenInput, LogoutInput, ChangePasswordInput } from '../validators/index.js';
 
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -36,7 +36,12 @@ export class AuthController {
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const result = await authService.refreshToken((req.body as RefreshTokenInput).refreshToken);
-      res.json({ success: true, data: result });
+      res.json({
+        success: true,
+        data: result,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      });
     } catch (error) {
       next(error);
     }
@@ -44,8 +49,10 @@ export class AuthController {
 
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { refreshToken } = req.body as RefreshTokenInput;
-      await authService.logout(refreshToken);
+      const { refreshToken } = req.body as LogoutInput;
+      if (refreshToken) {
+        await authService.logout(refreshToken);
+      }
       res.json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
       next(error);
