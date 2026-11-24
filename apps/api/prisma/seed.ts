@@ -738,12 +738,6 @@ async function main() {
     );
   }
 
-    const totalClusterReports = clusterDefs.reduce((s, c) => s + c.count, 0);
-    console.log(
-      `Deterministic demo dataset seeded: ${clusterDefs.length} clusters (${totalClusterReports} reports) + ${noisePoints.length} isolated noise reports across Maharashtra.`
-    );
-  }
-
   console.log('Seed completed successfully!')
 }
 
