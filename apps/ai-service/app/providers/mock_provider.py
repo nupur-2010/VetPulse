@@ -1,113 +1,27 @@
+"""Optional keyword fallback used only when AI_PROVIDER=mock.
+
+The production path is LocalPredictionProvider (tab + vision late fusion).
+"""
+
 import uuid
 from datetime import datetime
-from typing import List, Dict
 
+from ..constants import CLASSES, DEFAULT_SEVERITY, DISCLAIMER, RECOMMENDATIONS
+from ..features import canonicalize_symptoms
 from ..schemas.prediction import (
+    PossibleCondition,
     PredictionRequest,
     PredictionResponse,
-    PossibleCondition,
-    ImageAssessment,
 )
 from .base_provider import BasePredictionProvider
 
-SCENARIOS = {
-    "healthy": {
-        "name": "Healthy",
-        "confidence": 0.95,
-        "severity": "LOW",
-        "possible_conditions": [PossibleCondition(disease="Healthy", confidence=0.95)],
-        "supporting_symptoms": ["normal"],
-        "recommendations": ["Continue regular monitoring"],
-    },
-    "fmd": {
-        "name": "Foot-and-Mouth Disease",
-        "confidence": 0.87,
-        "severity": "CRITICAL",
-        "possible_conditions": [PossibleCondition(disease="Foot-and-Mouth Disease", confidence=0.87)],
-        "supporting_symptoms": ["fever"],
-        "recommendations": ["ISOLATE animal immediately"],
-    },
-    "lumpy_skin": {
-        "name": "Lumpy Skin Disease",
-        "confidence": 0.82,
-        "severity": "HIGH",
-        "possible_conditions": [PossibleCondition(disease="Lumpy Skin Disease", confidence=0.82)],
-        "supporting_symptoms": ["nodule"],
-        "recommendations": ["ISOLATE animal immediately"],
-    },
-    "mastitis": {
-        "name": "Mastitis",
-        "confidence": 0.89,
-        "severity": "MODERATE",
-        "possible_conditions": [PossibleCondition(disease="Mastitis", confidence=0.89)],
-        "supporting_symptoms": ["udder"],
-        "recommendations": ["Continue milking"],
-    },
-    "brd": {
-        "name": "Bovine Respiratory Disease",
-        "confidence": 0.84,
-        "severity": "HIGH",
-        "possible_conditions": [PossibleCondition(disease="Bovine Respiratory Disease", confidence=0.84)],
-        "supporting_symptoms": ["cough"],
-        "recommendations": ["ISOLATE affected animal"],
-    },
-    "theileriosis": {
-        "name": "Theileriosis",
-        "confidence": 0.78,
-        "severity": "HIGH",
-        "possible_conditions": [PossibleCondition(disease="Theileriosis", confidence=0.78)],
-        "supporting_symptoms": ["fever"],
-        "recommendations": ["Blood smear examination"],
-    },
-    "babesiosis": {
-        "name": "Babesiosis",
-        "confidence": 0.76,
-        "severity": "HIGH",
-        "possible_conditions": [PossibleCondition(disease="Babesiosis", confidence=0.76)],
-        "supporting_symptoms": ["fever"],
-        "recommendations": ["Blood smear examination"],
-    },
-    "anaplasmosis": {
-        "name": "Anaplasmosis",
-        "confidence": 0.74,
-        "severity": "MODERATE",
-        "possible_conditions": [PossibleCondition(disease="Anaplasmosis", confidence=0.74)],
-        "supporting_symptoms": ["fever"],
-        "recommendations": ["Blood smear examination"],
-    },
-    "blackleg": {
-        "name": "Blackleg",
-        "confidence": 0.81,
-        "severity": "CRITICAL",
-        "possible_conditions": [PossibleCondition(disease="Blackleg", confidence=0.81)],
-        "supporting_symptoms": ["sudden weakness"],
-        "recommendations": ["EMERGENCY veterinary attention"],
-    },
-    "bovine_ephemeral_fever": {
-        "name": "Bovine Ephemeral Fever",
-        "confidence": 0.73,
-        "severity": "MODERATE",
-        "possible_conditions": [PossibleCondition(disease="Bovine Ephemeral Fever", confidence=0.73)],
-        "supporting_symptoms": ["fever"],
-        "recommendations": ["Anti-inflammatory medication"],
-    },
-    "insufficient_info": {
-        "name": "Insufficient Information",
-        "confidence": 0.0,
-        "severity": "UNKNOWN",
-        "possible_conditions": [PossibleCondition(disease="Insufficient Information", confidence=0.0)],
-        "supporting_symptoms": ["N/A"],
-        "recommendations": ["Provide more detailed symptom information"],
-    },
-    "uncertain": {
-        "name": "Uncertain Prediction",
-        "confidence": 0.3,
-        "severity": "UNKNOWN",
-        "possible_conditions": [PossibleCondition(disease="Uncertain Prediction", confidence=0.3)],
-        "supporting_symptoms": ["N/A"],
-        "recommendations": ["Consult with veterinarian"],
-    },
+_KEYWORDS = {
+    "Foot and Mouth Disease": {"Mouth ulcers", "Excessive salivation", "Difficulty chewing"},
+    "Lumpy Skin Disease": {"Skin nodules", "Lesions", "Swelling"},
+    "Mastitis": {"Swollen udder", "Abnormal milk", "Pain during milking"},
+    "Bovine Respiratory Disease": {"Cough", "Nasal discharge", "Difficulty breathing"},
 }
+
 
 class MockPredictionProvider(BasePredictionProvider):
     def __init__(self):
@@ -119,52 +33,65 @@ class MockPredictionProvider(BasePredictionProvider):
         return symptom.lower().strip().replace("-", "_").replace(" ", "_")
 
     async def predict(self, request: PredictionRequest) -> PredictionResponse:
-        scenario_key = "uncertain"
-        symptoms = request.symptoms or []
-        temp = request.temperature
+        symptoms, _unknown = canonicalize_symptoms(request.symptoms)
+        active = set(symptoms)
 
-        # Find best matching scenario
-        scores = {}
-        for key, scen in SCENARIOS.items():
-            if key in ("healthy", "insufficient_info", "uncertain"):
-                continue
-            matches = 0
-            for kw in scen.get("keywords", []):
-                for sym in symptoms:
-                    if kw.lower() in self._normalize_symptom(sym):
-                        matches += 1
-                        break
-            if matches > 0:
-                scores[key] = matches * 10
-        if scores:
-            scenario_key = max(scores, key=scores.get)
-        elif not symptoms or len(symptoms) < 2:
-            scenario_key = "insufficient_info"
+        scores = {"Healthy": 0.2}
+        for disease, keywords in _KEYWORDS.items():
+            matches = len(active & keywords)
+            if matches:
+                scores[disease] = float(matches)
+        predicted = max(scores, key=scores.get)
 
-        scenario = SCENARIOS[scenario_key]
-        pred_id = str(uuid.uuid4())
+        probabilities = {name: 5.0 for name in CLASSES}
+        probabilities[predicted] = 70.0
+        remaining = 30.0 / (len(CLASSES) - 1)
+        for name in CLASSES:
+            if name != predicted:
+                probabilities[name] = round(remaining, 2)
+        probabilities[predicted] = round(
+            100.0 - sum(v for k, v in probabilities.items() if k != predicted), 2
+        )
+
         return PredictionResponse(
-            prediction_id=pred_id,
+            prediction_id=str(uuid.uuid4()),
             provider=self.provider_name,
             model_status=self.model_status,
-            is_simulated=True,
-            predicted_disease=scenario["name"],
-            confidence=scenario["confidence"],
-            severity=scenario["severity"],
-            possible_conditions=scenario["possible_conditions"],
-            supporting_symptoms=scenario["supporting_symptoms"],
-            recommendations=scenario["recommendations"],
-            disclaimer="This is a simulated prediction for testing purposes only.",
+            predicted_disease=predicted,
+            confidence=probabilities[predicted],
+            class_probabilities=probabilities,
+            top_contributing_factors=symptoms or ["No symptoms reported"],
+            severity=DEFAULT_SEVERITY[predicted],
+            possible_conditions=[
+                PossibleCondition(disease=name, confidence=value / 100.0)
+                for name, value in sorted(
+                    probabilities.items(), key=lambda item: item[1], reverse=True
+                )[:3]
+            ],
+            supporting_symptoms=symptoms,
+            recommendations=RECOMMENDATIONS[predicted],
+            disclaimer=DISCLAIMER,
             predicted_at=datetime.utcnow(),
+            used_image=False,
+            used_symptoms=bool(symptoms),
         )
 
     async def health(self) -> dict:
-        return {"status": "HEALTHY", "provider": self.provider_name, "model_status": self.model_status}
+        return {
+            "status": "HEALTHY",
+            "provider": self.provider_name,
+            "model_status": self.model_status,
+            "symptom_model_loaded": False,
+            "vision_model_loaded": False,
+        }
 
     async def model_info(self) -> dict:
         return {
             "name": "Mock Cattle Disease Detection Model",
             "version": self.model_version,
             "status": self.model_status,
-            "is_simulated": True,
+            "classes": CLASSES,
+            "image_classes": [],
+            "symptom_model_loaded": False,
+            "vision_model_loaded": False,
         }

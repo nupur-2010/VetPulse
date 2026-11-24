@@ -118,10 +118,7 @@ export function ReportDetail() {
         <Card>
           <CardHeader><CardTitle>AI Assessment</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            <div className={`p-4 rounded-lg ${report.prediction.isSimulated ? 'bg-yellow-50 border border-yellow-200' : 'bg-blue-50 border border-blue-200'}`}>
-              {report.prediction.isSimulated && (
-                <p className="text-xs text-yellow-700 font-medium mb-2">⚠️ DEMO RESULT — This assessment is simulated</p>
-              )}
+            <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
               <h4 className="font-semibold text-lg">{report.prediction.predictedDisease || 'No prediction'}</h4>
               <p className="text-sm text-stone-600 mt-1">
                 Confidence: {report.prediction.confidence ? `${Math.round(report.prediction.confidence * 100)}%` : 'N/A'}

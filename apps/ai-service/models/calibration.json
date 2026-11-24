@@ -1,0 +1,42 @@
+{
+  "fitted_on": {
+    "vision": "555 held-out real field photographs",
+    "symptom": "81 held-out real clinical records"
+  },
+  "target_selective_accuracy": 0.97,
+  "vision": {
+    "temperature": 1.000004,
+    "min_confidence": 0.81,
+    "selective_accuracy": 0.9764,
+    "coverage_at_threshold": 0.764,
+    "n_samples": 555,
+    "accuracy": 0.918919,
+    "ece_before": 0.055832,
+    "ece_after": 0.055833,
+    "brier_before": 0.135228,
+    "brier_after": 0.135228
+  },
+  "symptom": {
+    "temperature": 1.000005,
+    "min_confidence": 0.6,
+    "selective_accuracy": 1.0,
+    "coverage_at_threshold": 1.0,
+    "n_samples": 81,
+    "accuracy": 1.0,
+    "ece_before": 0.008374,
+    "ece_after": 0.008374,
+    "brier_before": 0.001098,
+    "brier_after": 0.001098
+  },
+  "fusion": {
+    "min_confidence": 0.6
+  },
+  "policy": {
+    "margin_min": 0.1,
+    "min_signal_count": 2,
+    "alpha_insufficient": 0.65,
+    "alpha_disagreement": 0.5,
+    "alpha_margin": 0.4,
+    "alpha_lowprob": 0.3
+  }
+}

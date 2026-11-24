@@ -371,7 +371,7 @@ export const aiServiceApi = {
     return response.data
   },
 
-  getModelInfo: async (): Promise<{ name: string; version: string; status: string; isSimulated: boolean }> => {
+  getModelInfo: async (): Promise<{ name: string; version: string; status: string; classes: string[]; symptom_model_loaded: boolean; vision_model_loaded: boolean }> => {
     const response = await axios.get('/model-info', { baseURL: 'http://localhost:8000' })
     return response.data
   },

@@ -1,0 +1,477 @@
+{
+  "symptom_real_reference": {
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "macro_precision": 0.6,
+    "macro_recall": 0.6,
+    "macro_f1": 0.6,
+    "weighted_f1": 1.0,
+    "per_class": {
+      "Healthy": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Foot and Mouth Disease": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 86
+      },
+      "Lumpy Skin Disease": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Mastitis": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 99
+      },
+      "Bovine Respiratory Disease": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 219
+      }
+    },
+    "classification_report": {
+      "Healthy": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 0.0
+      },
+      "Foot and Mouth Disease": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 86.0
+      },
+      "Lumpy Skin Disease": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 0.0
+      },
+      "Mastitis": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 99.0
+      },
+      "Bovine Respiratory Disease": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 219.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 0.6,
+        "recall": 0.6,
+        "f1-score": 0.6,
+        "support": 404.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 404.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        86,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        99,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        219
+      ]
+    ],
+    "n_samples": 404,
+    "top2_accuracy": 1.0,
+    "log_loss": 0.0026795379455969086,
+    "latency_ms_per_sample": 0.0484,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "macro_f1_present_classes": 1.0
+  },
+  "vision_real_field": {
+    "accuracy": 0.918918918918919,
+    "balanced_accuracy": 0.9237474008865307,
+    "macro_precision": 0.8978354978354979,
+    "macro_recall": 0.9237474008865307,
+    "macro_f1": 0.9096881402627748,
+    "weighted_f1": 0.9197129238149299,
+    "per_class": {
+      "Healthy": {
+        "precision": 0.9696969696969697,
+        "recall": 0.9142857142857143,
+        "f1": 0.9411764705882353,
+        "support": 315
+      },
+      "Foot and Mouth Disease": {
+        "precision": 0.8666666666666667,
+        "recall": 0.9397590361445783,
+        "f1": 0.9017341040462428,
+        "support": 83
+      },
+      "Lumpy Skin Disease": {
+        "precision": 0.8571428571428571,
+        "recall": 0.9171974522292994,
+        "f1": 0.8861538461538462,
+        "support": 157
+      }
+    },
+    "classification_report": {
+      "Healthy": {
+        "precision": 0.9696969696969697,
+        "recall": 0.9142857142857143,
+        "f1-score": 0.9411764705882353,
+        "support": 315.0
+      },
+      "Foot and Mouth Disease": {
+        "precision": 0.8666666666666667,
+        "recall": 0.9397590361445783,
+        "f1-score": 0.9017341040462428,
+        "support": 83.0
+      },
+      "Lumpy Skin Disease": {
+        "precision": 0.8571428571428571,
+        "recall": 0.9171974522292994,
+        "f1-score": 0.8861538461538462,
+        "support": 157.0
+      },
+      "accuracy": 0.918918918918919,
+      "macro avg": {
+        "precision": 0.8978354978354979,
+        "recall": 0.9237474008865307,
+        "f1-score": 0.9096881402627748,
+        "support": 555.0
+      },
+      "weighted avg": {
+        "precision": 0.9224492024492024,
+        "recall": 0.918918918918919,
+        "f1-score": 0.9197129238149299,
+        "support": 555.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        288,
+        7,
+        20
+      ],
+      [
+        1,
+        78,
+        4
+      ],
+      [
+        8,
+        5,
+        144
+      ]
+    ],
+    "n_samples": 555,
+    "top2_accuracy": 0.9891891891891892,
+    "log_loss": 0.2711300822943764,
+    "roc_auc_ovr_macro": 0.9820277202850862,
+    "latency_ms_per_sample": 29.2233
+  },
+  "fusion_real": {
+    "accuracy": 0.9966887417218543,
+    "balanced_accuracy": 0.9959839357429718,
+    "macro_precision": 0.6,
+    "macro_recall": 0.5975903614457831,
+    "macro_f1": 0.5987878787878789,
+    "weighted_f1": 0.9983343367449328,
+    "per_class": {
+      "Healthy": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Foot and Mouth Disease": {
+        "precision": 1.0,
+        "recall": 0.9879518072289156,
+        "f1": 0.9939393939393939,
+        "support": 83
+      },
+      "Lumpy Skin Disease": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0
+      },
+      "Mastitis": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 99
+      },
+      "Bovine Respiratory Disease": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "support": 120
+      }
+    },
+    "classification_report": {
+      "Healthy": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 0.0
+      },
+      "Foot and Mouth Disease": {
+        "precision": 1.0,
+        "recall": 0.9879518072289156,
+        "f1-score": 0.9939393939393939,
+        "support": 83.0
+      },
+      "Lumpy Skin Disease": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 0.0
+      },
+      "Mastitis": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 99.0
+      },
+      "Bovine Respiratory Disease": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 120.0
+      },
+      "accuracy": 0.9966887417218543,
+      "macro avg": {
+        "precision": 0.6,
+        "recall": 0.5975903614457831,
+        "f1-score": 0.5987878787878789,
+        "support": 302.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 0.9966887417218543,
+        "f1-score": 0.9983343367449328,
+        "support": 302.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        82,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        99,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        120
+      ]
+    ],
+    "n_samples": 302,
+    "top2_accuracy": 1.0,
+    "log_loss": 0.03009328431929869,
+    "latency_ms_mean": 27.174,
+    "latency_ms_p95": 106.642,
+    "n_errors": 0,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "macro_f1_present_classes": 0.9979797979797981
+  },
+  "symptom_fresh_synthetic": {
+    "accuracy": 0.9915,
+    "balanced_accuracy": 0.9915,
+    "macro_precision": 0.9916030143400644,
+    "macro_recall": 0.9915,
+    "macro_f1": 0.9915050364562872,
+    "weighted_f1": 0.9915050364562872,
+    "per_class": {
+      "Healthy": {
+        "precision": 1.0,
+        "recall": 0.9975,
+        "f1": 0.9987484355444305,
+        "support": 400
+      },
+      "Foot and Mouth Disease": {
+        "precision": 0.9875,
+        "recall": 0.9875,
+        "f1": 0.9875,
+        "support": 400
+      },
+      "Lumpy Skin Disease": {
+        "precision": 1.0,
+        "recall": 0.9775,
+        "f1": 0.988621997471555,
+        "support": 400
+      },
+      "Mastitis": {
+        "precision": 0.9950248756218906,
+        "recall": 1.0,
+        "f1": 0.9975062344139651,
+        "support": 400
+      },
+      "Bovine Respiratory Disease": {
+        "precision": 0.9754901960784313,
+        "recall": 0.995,
+        "f1": 0.9851485148514851,
+        "support": 400
+      }
+    },
+    "classification_report": {
+      "Healthy": {
+        "precision": 1.0,
+        "recall": 0.9975,
+        "f1-score": 0.9987484355444305,
+        "support": 400.0
+      },
+      "Foot and Mouth Disease": {
+        "precision": 0.9875,
+        "recall": 0.9875,
+        "f1-score": 0.9875,
+        "support": 400.0
+      },
+      "Lumpy Skin Disease": {
+        "precision": 1.0,
+        "recall": 0.9775,
+        "f1-score": 0.988621997471555,
+        "support": 400.0
+      },
+      "Mastitis": {
+        "precision": 0.9950248756218906,
+        "recall": 1.0,
+        "f1-score": 0.9975062344139651,
+        "support": 400.0
+      },
+      "Bovine Respiratory Disease": {
+        "precision": 0.9754901960784313,
+        "recall": 0.995,
+        "f1-score": 0.9851485148514851,
+        "support": 400.0
+      },
+      "accuracy": 0.9915,
+      "macro avg": {
+        "precision": 0.9916030143400644,
+        "recall": 0.9915,
+        "f1-score": 0.9915050364562872,
+        "support": 2000.0
+      },
+      "weighted avg": {
+        "precision": 0.9916030143400644,
+        "recall": 0.9915,
+        "f1-score": 0.9915050364562872,
+        "support": 2000.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        399,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        395,
+        0,
+        0,
+        5
+      ],
+      [
+        0,
+        3,
+        391,
+        2,
+        4
+      ],
+      [
+        0,
+        0,
+        0,
+        400,
+        0
+      ],
+      [
+        0,
+        2,
+        0,
+        0,
+        398
+      ]
+    ],
+    "n_samples": 2000,
+    "top2_accuracy": 0.998,
+    "log_loss": 0.028439600939577377,
+    "roc_auc_ovr_macro": 0.9999040625
+  }
+}

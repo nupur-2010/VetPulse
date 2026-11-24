@@ -1,0 +1,140 @@
+{
+  "accuracy": 0.994279176201373,
+  "macro_f1": 0.99419175578998,
+  "weighted_f1": 0.9942874156587879,
+  "classification_report": {
+    "Healthy": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 153.0
+    },
+    "Foot and Mouth Disease": {
+      "precision": 0.9777777777777777,
+      "recall": 0.9943502824858758,
+      "f1-score": 0.9859943977591037,
+      "support": 177.0
+    },
+    "Lumpy Skin Disease": {
+      "precision": 0.9936708860759493,
+      "recall": 0.98125,
+      "f1-score": 0.9874213836477987,
+      "support": 160.0
+    },
+    "Mastitis": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 180.0
+    },
+    "Bovine Respiratory Disease": {
+      "precision": 1.0,
+      "recall": 0.9950980392156863,
+      "f1-score": 0.9975429975429976,
+      "support": 204.0
+    },
+    "accuracy": 0.994279176201373,
+    "macro avg": {
+      "precision": 0.9942897327707454,
+      "recall": 0.9941396643403124,
+      "f1-score": 0.99419175578998,
+      "support": 874.0
+    },
+    "weighted avg": {
+      "precision": 0.9943409707537969,
+      "recall": 0.994279176201373,
+      "f1-score": 0.9942874156587879,
+      "support": 874.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      153,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      176,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      3,
+      157,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      180,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      203
+    ]
+  ],
+  "classes": [
+    "Healthy",
+    "Foot and Mouth Disease",
+    "Lumpy Skin Disease",
+    "Mastitis",
+    "Bovine Respiratory Disease"
+  ],
+  "n_train": 3495,
+  "n_val": 874,
+  "n_real_train": 323,
+  "real_val_accuracy": 1.0,
+  "top_features": [
+    [
+      "symptom_cough",
+      0.18571558594703674
+    ],
+    [
+      "symptom_pain_during_milking",
+      0.13243582844734192
+    ],
+    [
+      "symptom_skin_nodules",
+      0.1268806904554367
+    ],
+    [
+      "symptom_swollen_udder",
+      0.11707237362861633
+    ],
+    [
+      "symptom_mouth_ulcers",
+      0.11388690024614334
+    ],
+    [
+      "symptom_abnormal_milk",
+      0.07936202734708786
+    ],
+    [
+      "symptom_difficulty_chewing",
+      0.02960273250937462
+    ],
+    [
+      "symptom_nasal_discharge",
+      0.029483169317245483
+    ],
+    [
+      "symptom_fever",
+      0.027711477130651474
+    ],
+    [
+      "symptom_reproductive_problems",
+      0.02353333868086338
+    ]
+  ]
+}

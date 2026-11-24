@@ -1,0 +1,585 @@
+{
+  "split_counts": {
+    "all": 404,
+    "holdout": 81,
+    "train": 323,
+    "holdout_by_disease": {
+      "Bovine Respiratory Disease": 44,
+      "Mastitis": 20,
+      "Foot and Mouth Disease": 17
+    }
+  },
+  "vision_real_field": {
+    "n_samples": 555,
+    "accuracy": 0.918918918918919,
+    "balanced_accuracy": 0.9237474008865307,
+    "macro_f1_present": 0.9096881402627748,
+    "present_classes": [
+      "Healthy",
+      "Foot and Mouth Disease",
+      "Lumpy Skin Disease"
+    ],
+    "ece": 0.07572678111036146,
+    "brier": 0.14412138787205309,
+    "mean_confidence": 84.31924324324325,
+    "median_confidence": 91.74,
+    "low_confidence_rate": 0.23603603603603604,
+    "band_counts": {
+      "high": 184,
+      "medium": 240,
+      "low": 131
+    },
+    "confusion_matrix": [
+      [
+        288,
+        7,
+        20
+      ],
+      [
+        1,
+        78,
+        4
+      ],
+      [
+        8,
+        5,
+        144
+      ]
+    ],
+    "top2_accuracy": 0.9891891891891892,
+    "selective": {
+      "confident_coverage": 0.764,
+      "confident_accuracy": 0.9764,
+      "low_confidence_accuracy": 0.7328,
+      "high_confidence_coverage": 0.3315,
+      "high_confidence_accuracy": 0.9783,
+      "errors": 45,
+      "errors_shown_high_confidence": 4,
+      "error_high_confidence_share": 0.0889,
+      "high_confidence_error_rate": 0.0217
+    },
+    "latency_ms_mean": 28.643,
+    "latency_ms_p95": 44.259
+  },
+  "symptom_real_all": {
+    "n_samples": 404,
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "macro_f1_present": 1.0,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "ece": 0.0025752018458659034,
+    "brier": 0.00022814365206335761,
+    "mean_confidence": 99.73997524752477,
+    "median_confidence": 99.97,
+    "low_confidence_rate": 0.0,
+    "band_counts": {
+      "high": 401,
+      "medium": 3,
+      "low": 0
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        86,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        99,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        219
+      ]
+    ],
+    "top2_accuracy": 1.0,
+    "selective": {
+      "confident_coverage": 1.0,
+      "confident_accuracy": 1.0,
+      "low_confidence_accuracy": null,
+      "high_confidence_coverage": 0.9926,
+      "high_confidence_accuracy": 1.0,
+      "errors": 0,
+      "errors_shown_high_confidence": 0,
+      "error_high_confidence_share": 0.0,
+      "high_confidence_error_rate": 0.0
+    },
+    "latency_ms_mean": 2.226,
+    "latency_ms_p95": 4.258
+  },
+  "symptom_real_holdout": {
+    "n_samples": 81,
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "macro_f1_present": 1.0,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "ece": 0.008349125604676344,
+    "brier": 0.0010984732823869298,
+    "mean_confidence": 99.16296296296298,
+    "median_confidence": 99.97,
+    "low_confidence_rate": 0.0,
+    "band_counts": {
+      "high": 78,
+      "medium": 3,
+      "low": 0
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        17,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        20,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        44
+      ]
+    ],
+    "top2_accuracy": 1.0,
+    "selective": {
+      "confident_coverage": 1.0,
+      "confident_accuracy": 1.0,
+      "low_confidence_accuracy": null,
+      "high_confidence_coverage": 0.963,
+      "high_confidence_accuracy": 1.0,
+      "errors": 0,
+      "errors_shown_high_confidence": 0,
+      "error_high_confidence_share": 0.0,
+      "high_confidence_error_rate": 0.0
+    },
+    "latency_ms_mean": 1.993,
+    "latency_ms_p95": 2.634
+  },
+  "symptom_real_train": {
+    "n_samples": 323,
+    "accuracy": 1.0,
+    "balanced_accuracy": 1.0,
+    "macro_f1_present": 1.0,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "ece": 0.0011272519249257984,
+    "brier": 9.887614737632113e-06,
+    "mean_confidence": 99.88467492260062,
+    "median_confidence": 99.97,
+    "low_confidence_rate": 0.0,
+    "band_counts": {
+      "high": 323,
+      "medium": 0,
+      "low": 0
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        69,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        79,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        175
+      ]
+    ],
+    "top2_accuracy": 1.0,
+    "selective": {
+      "confident_coverage": 1.0,
+      "confident_accuracy": 1.0,
+      "low_confidence_accuracy": null,
+      "high_confidence_coverage": 1.0,
+      "high_confidence_accuracy": 1.0,
+      "errors": 0,
+      "errors_shown_high_confidence": 0,
+      "error_high_confidence_share": 0.0,
+      "high_confidence_error_rate": 0.0
+    },
+    "latency_ms_mean": 1.862,
+    "latency_ms_p95": 2.449
+  },
+  "fusion_real_full": {
+    "n_samples": 302,
+    "accuracy": 0.9966887417218543,
+    "balanced_accuracy": 0.9959839357429718,
+    "macro_f1_present": 0.9979797979797981,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "ece": 0.02384169191695664,
+    "brier": 0.01384567472509738,
+    "mean_confidence": 97.28261589403974,
+    "median_confidence": 99.95,
+    "low_confidence_rate": 0.016556291390728478,
+    "band_counts": {
+      "high": 283,
+      "medium": 14,
+      "low": 5
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        82,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        99,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        120
+      ]
+    ],
+    "top2_accuracy": 1.0,
+    "selective": {
+      "confident_coverage": 0.9834,
+      "confident_accuracy": 1.0,
+      "low_confidence_accuracy": 0.8,
+      "high_confidence_coverage": 0.9371,
+      "high_confidence_accuracy": 1.0,
+      "errors": 1,
+      "errors_shown_high_confidence": 0,
+      "error_high_confidence_share": 0.0,
+      "high_confidence_error_rate": 0.0
+    },
+    "latency_ms_mean": 11.936,
+    "latency_ms_p95": 43.17,
+    "strict_holdout": false
+  },
+  "fusion_real_strict": {
+    "n_samples": 147,
+    "accuracy": 0.9931972789115646,
+    "balanced_accuracy": 0.9959839357429718,
+    "macro_f1_present": 0.9979797979797981,
+    "present_classes": [
+      "Foot and Mouth Disease",
+      "Mastitis",
+      "Bovine Respiratory Disease"
+    ],
+    "ece": 0.05136488846736488,
+    "brier": 0.02895935535201515,
+    "mean_confidence": 94.18081632653062,
+    "median_confidence": 99.15,
+    "low_confidence_rate": 0.034013605442176874,
+    "band_counts": {
+      "high": 126,
+      "medium": 16,
+      "low": 5
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        82,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        20,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        44
+      ]
+    ],
+    "top2_accuracy": 1.0,
+    "selective": {
+      "confident_coverage": 0.966,
+      "confident_accuracy": 1.0,
+      "low_confidence_accuracy": 0.8,
+      "high_confidence_coverage": 0.8571,
+      "high_confidence_accuracy": 1.0,
+      "errors": 1,
+      "errors_shown_high_confidence": 0,
+      "error_high_confidence_share": 0.0,
+      "high_confidence_error_rate": 0.0
+    },
+    "latency_ms_mean": 26.321,
+    "latency_ms_p95": 59.607,
+    "strict_holdout": true
+  },
+  "edge_cases": [
+    {
+      "case": "single_nonspecific_symptom_cough",
+      "predicted": "Healthy",
+      "confidence": 35.96,
+      "band": "low",
+      "is_low_confidence": true,
+      "evidence_count": 1,
+      "top2_margin": 0.1095,
+      "note": "Low confidence (too few independent signals; the calibrated probability is low). Collect more symptoms, upload a clearer photo of the affected area, or have a veterinarian examine the animal."
+    },
+    {
+      "case": "single_symptom_fever",
+      "predicted": "Healthy",
+      "confidence": 47.75,
+      "band": "low",
+      "is_low_confidence": true,
+      "evidence_count": 1,
+      "top2_margin": 0.3461,
+      "note": "Low confidence (too few independent signals; the calibrated probability is low). Collect more symptoms, upload a clearer photo of the affected area, or have a veterinarian examine the animal."
+    },
+    {
+      "case": "isolated_high_fever",
+      "predicted": "Healthy",
+      "confidence": 45.28,
+      "band": "low",
+      "is_low_confidence": true,
+      "evidence_count": 1,
+      "top2_margin": 0.3074,
+      "note": "Low confidence (too few independent signals; the calibrated probability is low). Collect more symptoms, upload a clearer photo of the affected area, or have a veterinarian examine the animal."
+    },
+    {
+      "case": "normal_temperature_no_signs",
+      "predicted": "Healthy",
+      "confidence": 99.94,
+      "band": "high",
+      "is_low_confidence": false,
+      "evidence_count": 1,
+      "top2_margin": 0.9991,
+      "note": null
+    },
+    {
+      "case": "unknown_symptom_only",
+      "rejected": true,
+      "reason": "Provide at least one symptom, temperature, duration or a valid image."
+    },
+    {
+      "case": "unknown_symptom_with_fever",
+      "predicted": "Healthy",
+      "confidence": 45.28,
+      "band": "low",
+      "is_low_confidence": true,
+      "evidence_count": 1,
+      "top2_margin": 0.3074,
+      "note": "Low confidence (too few independent signals; the calibrated probability is low). Collect more symptoms, upload a clearer photo of the affected area, or have a veterinarian examine the animal."
+    },
+    {
+      "case": "duration_only",
+      "predicted": "Healthy",
+      "confidence": 33.54,
+      "band": "low",
+      "is_low_confidence": true,
+      "evidence_count": 1,
+      "top2_margin": 0.1135,
+      "note": "Low confidence (too few independent signals; the calibrated probability is low). Collect more symptoms, upload a clearer photo of the affected area, or have a veterinarian examine the animal."
+    },
+    {
+      "case": "single_specific_symptom_nodules",
+      "predicted": "Healthy",
+      "confidence": 47.38,
+      "band": "low",
+      "is_low_confidence": true,
+      "evidence_count": 1,
+      "top2_margin": 0.3377,
+      "note": "Low confidence (too few independent signals; the calibrated probability is low). Collect more symptoms, upload a clearer photo of the affected area, or have a veterinarian examine the animal."
+    },
+    {
+      "case": "two_strong_fmd_signs",
+      "predicted": "Foot and Mouth Disease",
+      "confidence": 99.13,
+      "band": "high",
+      "is_low_confidence": false,
+      "evidence_count": 3,
+      "top2_margin": 0.9873,
+      "note": null
+    },
+    {
+      "case": "full_fmd",
+      "predicted": "Foot and Mouth Disease",
+      "confidence": 100.0,
+      "band": "high",
+      "is_low_confidence": false,
+      "evidence_count": 6,
+      "top2_margin": 0.9999,
+      "note": null
+    },
+    {
+      "case": "full_mastitis",
+      "predicted": "Mastitis",
+      "confidence": 99.99,
+      "band": "high",
+      "is_low_confidence": false,
+      "evidence_count": 6,
+      "top2_margin": 0.9999,
+      "note": null
+    },
+    {
+      "case": "full_brd",
+      "predicted": "Bovine Respiratory Disease",
+      "confidence": 100.0,
+      "band": "high",
+      "is_low_confidence": false,
+      "evidence_count": 6,
+      "top2_margin": 0.9999,
+      "note": null
+    }
+  ],
+  "calibration": {
+    "fitted_on": {
+      "vision": "555 held-out real field photographs",
+      "symptom": "81 held-out real clinical records"
+    },
+    "target_selective_accuracy": 0.97,
+    "vision": {
+      "temperature": 1.000004,
+      "min_confidence": 0.81,
+      "selective_accuracy": 0.9764,
+      "coverage_at_threshold": 0.764,
+      "n_samples": 555,
+      "accuracy": 0.918919,
+      "ece_before": 0.055832,
+      "ece_after": 0.055833,
+      "brier_before": 0.135228,
+      "brier_after": 0.135228
+    },
+    "symptom": {
+      "temperature": 1.000005,
+      "min_confidence": 0.6,
+      "selective_accuracy": 1.0,
+      "coverage_at_threshold": 1.0,
+      "n_samples": 81,
+      "accuracy": 1.0,
+      "ece_before": 0.008374,
+      "ece_after": 0.008374,
+      "brier_before": 0.001098,
+      "brier_after": 0.001098
+    },
+    "fusion": {
+      "min_confidence": 0.6
+    },
+    "policy": {
+      "margin_min": 0.1,
+      "min_signal_count": 2,
+      "alpha_insufficient": 0.65,
+      "alpha_disagreement": 0.5,
+      "alpha_margin": 0.4,
+      "alpha_lowprob": 0.3
+    }
+  }
+}

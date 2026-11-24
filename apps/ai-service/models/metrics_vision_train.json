@@ -1,0 +1,63 @@
+{
+  "best_val_accuracy": 0.918918918918919,
+  "final_val_accuracy": 0.918918918918919,
+  "val_loss": 0.27113008810593203,
+  "classes": [
+    "Foot_and_Mouth_Disease",
+    "Healthy",
+    "Lumpy_Skin_Disease"
+  ],
+  "classification_report": {
+    "Foot_and_Mouth_Disease": {
+      "precision": 0.8666666666666667,
+      "recall": 0.9397590361445783,
+      "f1-score": 0.9017341040462428,
+      "support": 83.0
+    },
+    "Healthy": {
+      "precision": 0.9696969696969697,
+      "recall": 0.9142857142857143,
+      "f1-score": 0.9411764705882353,
+      "support": 315.0
+    },
+    "Lumpy_Skin_Disease": {
+      "precision": 0.8571428571428571,
+      "recall": 0.9171974522292994,
+      "f1-score": 0.8861538461538462,
+      "support": 157.0
+    },
+    "accuracy": 0.918918918918919,
+    "macro avg": {
+      "precision": 0.8978354978354979,
+      "recall": 0.9237474008865307,
+      "f1-score": 0.9096881402627748,
+      "support": 555.0
+    },
+    "weighted avg": {
+      "precision": 0.9224492024492024,
+      "recall": 0.918918918918919,
+      "f1-score": 0.9197129238149299,
+      "support": 555.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      78,
+      1,
+      4
+    ],
+    [
+      7,
+      288,
+      20
+    ],
+    [
+      5,
+      8,
+      144
+    ]
+  ],
+  "n_train": 2220,
+  "n_val": 555,
+  "device": "cpu"
+}

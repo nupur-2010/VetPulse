@@ -1,13 +1,12 @@
-from typing import List, Dict, Any
+from typing import List
+
 from ..schemas.prediction import PredictionRequest
 
 
 def validate_symptoms(symptoms: List[str]) -> tuple[bool, str]:
-    """Validate that symptoms is a non-empty list of strings."""
+    """Validate that symptoms is a list of non-empty strings."""
     if not isinstance(symptoms, list):
         return False, "Symptoms must be a list"
-    if len(symptoms) == 0:
-        return False, "At least one symptom is required"
     for symptom in symptoms:
         if not isinstance(symptom, str):
             return False, f"Symptom must be a string, got {type(symptom)}"
@@ -17,11 +16,8 @@ def validate_symptoms(symptoms: List[str]) -> tuple[bool, str]:
 
 
 def validate_prediction_request(request: PredictionRequest) -> tuple[bool, str]:
-    """Validate a prediction request."""
-    if request.symptoms is None:
-        return False, "Symptoms are required"
-
-    valid, msg = validate_symptoms(request.symptoms)
+    """Validate a prediction request for symptom-only, image-only or fused input."""
+    valid, msg = validate_symptoms(request.symptoms or [])
     if not valid:
         return False, msg
 
@@ -32,16 +28,23 @@ def validate_prediction_request(request: PredictionRequest) -> tuple[bool, str]:
             return False, "Temperature must be between 35.0 and 45.0 Celsius"
 
     if request.duration is not None:
-        if not isinstance(request.duration, int):
-            return False, "Duration must be an integer"
+        if not isinstance(request.duration, (int, float)):
+            return False, "Duration must be a number"
         if request.duration < 0:
             return False, "Duration cannot be negative"
 
-    if request.image_refs is not None:
-        if not isinstance(request.image_refs, list):
-            return False, "Image references must be a list"
-        for ref in request.image_refs:
-            if not isinstance(ref, str):
-                return False, "Image reference must be a string"
+    for ref in request.all_image_refs():
+        if not isinstance(ref, str):
+            return False, "Image reference must be a string"
+
+    has_signal = bool(
+        request.symptoms
+        or request.temperature is not None
+        or request.duration is not None
+        or request.duration_label()
+        or request.all_image_refs()
+    )
+    if not has_signal:
+        return False, "Provide at least one symptom, temperature, duration or image"
 
     return True, ""

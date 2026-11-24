@@ -93,7 +93,6 @@ export function VetReportReview() {
             <CardTitle className="flex items-center gap-2">
               <Microscope className="w-5 h-5" />
               AI Prediction
-              {prediction.isSimulated && <Badge variant="warning">DEMO</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -101,9 +100,6 @@ export function VetReportReview() {
               <h4 className="font-semibold text-lg">{prediction.predictedDisease || 'No prediction'}</h4>
               {prediction.confidence && (
                 <p className="text-sm text-stone-600 mt-1">Confidence: {Math.round(prediction.confidence * 100)}%</p>
-              )}
-              {prediction.isSimulated && (
-                <p className="text-xs text-yellow-600 mt-2">⚠️ Simulated result for demonstration</p>
               )}
             </div>
             {prediction.recommendations && prediction.recommendations.length > 0 && (

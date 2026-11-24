@@ -1,29 +1,23 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
-  Users, 
   Search, 
   ShieldCheck, 
   Stethoscope, 
   BookOpen, 
   MapPin, 
   Phone, 
-  Mail, 
-  CheckCircle2, 
-  XCircle, 
   Eye, 
   X, 
   Award, 
   Building2, 
-  Clock, 
   Star 
 } from 'lucide-react'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { adminApi } from '@/services/api'
-import { formatDate } from '@/lib/utils'
 
 export function AdminUsersPage() {
   const queryClient = useQueryClient()
@@ -31,7 +25,7 @@ export function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['admin-users', roleFilter, searchQuery],
     queryFn: () =>
       adminApi.getUsers({
@@ -264,7 +258,7 @@ export function AdminUsersPage() {
                   </div>
 
                   <Badge
-                    variant={isVet ? 'default' : 'secondary'}
+                    variant="default"
                     className={`text-[10px] uppercase font-bold shrink-0 ${
                       isVet
                         ? 'bg-teal-100 text-teal-900 border border-teal-300'

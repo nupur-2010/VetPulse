@@ -55,8 +55,8 @@ This version uses **mock AI predictions only**. No actual machine learning model
 - Python 3.11+
 - FastAPI
 - Pydantic v2
-- Mock prediction provider (current)
-- Ready for future model integration
+- Locally trained PyTorch (MobileNetV3-Small) + XGBoost models, CPU-only
+- No API keys or cloud inference required
 
 ## Project Structure
 
@@ -225,31 +225,25 @@ GET /model-info   - Model information
 POST /predict     - Get prediction
 ```
 
-## Mock AI Predictions
+## Local AI Models
 
-The current AI service uses a **Mock Prediction Provider** that returns deterministic, realistic-looking outputs for demonstration purposes. All mock predictions are clearly labeled with:
+Predictions come from two models trained in this repository and loaded at AI
+service startup — no external API. Reports are labelled `provider: "local"` and
+`model_status: "LOADED"`.
 
-- `provider: "mock"`
-- `model_status: "MOCK"`
-- `is_simulated: true`
+- **Vision**: MobileNetV3-Small, 3 classes (Healthy, FMD, LSD), trained on
+  public field photos (Zenodo 7779246 / 11003967, Mendeley ggpwpscjvm).
+- **Symptoms**: XGBoost over 30 clinical signs + temperature/duration/severity,
+  5 classes, using the 93-signal cattle disease matrix (HF `scorder96`).
+- **Late fusion**: `0.60 * vision + 0.40 * symptoms`.
 
-Available mock scenarios:
-- Healthy / No obvious warning signs
-- Foot-and-Mouth Disease (FMD)
-- Lumpy Skin Disease (LSD)
-- Mastitis
-- Bovine Respiratory Disease (BRD)
-- Theileriosis
-- Babesiosis
-- Anaplasmosis
-- Blackleg
-- Bovine Ephemeral Fever
-- Insufficient information
-- Uncertain prediction
+Mastitis and Bovine Respiratory Disease are detected from clinical signs only,
+because no public RGB cattle-mastitis dataset exists and BRD is not a skin
+lesion disease. Held-out performance, dataset provenance and training commands
+are documented in [apps/ai-service/model/README.md](apps/ai-service/model/README.md).
 
-## Future Model Integration
-
-The application is designed to seamlessly integrate a real ML model when available. See [docs/model-integration.md](docs/model-integration.md) for detailed instructions.
+`AI_PROVIDER=mock` remains available as a deterministic offline fallback for
+UI demos; its responses are labelled `is_simulated: true`.
 
 ## Deployment
 

@@ -32,3 +32,14 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# AI datasets / trained artifacts
+apps/ai-service/data/raw/
+apps/ai-service/data/images/
+apps/ai-service/models/*.pth
+apps/ai-service/models/*.joblib

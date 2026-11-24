@@ -30,6 +30,5 @@ class ModelPredictionProvider(BasePredictionProvider):
             "name": "Cattle Disease Detection Model",
             "version": self.model_version,
             "status": self.model_status,
-            "is_simulated": False,
             "error": "No model loaded",
         }

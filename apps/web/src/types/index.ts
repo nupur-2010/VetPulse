@@ -222,6 +222,7 @@ export interface Prediction {
   supporting_symptoms?: string[]
   recommendations: string[]
   possible_conditions?: Array<{ disease: string; confidence: number }>
+  candidates?: Array<{ id?: string; disease: string; confidence: number }>
   imageAssessmentStatus?: string
   imageAssessmentNote?: string
   disclaimer: string

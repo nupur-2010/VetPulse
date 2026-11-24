@@ -1,97 +1,120 @@
 # Model Integration Guide
 
-This document describes how to integrate a real cattle disease detection model into the VetPulse AI service.
+VetPulse ships with locally trained models loaded inside the FastAPI service.
+There is no external inference API and no API key. This document describes the
+architecture, the request/response contract, and how to retrain or swap models.
 
-## Current Status
+## Architecture
 
-The AI service currently uses the `MockPredictionProvider` which returns simulated predictions for demonstration purposes. No actual machine learning model is loaded or used.
-
-## Future Integration Steps
-
-When your cattle disease detection model is ready, follow these steps to integrate it:
-
-### Step 1: Prepare Model Artifacts
-
-1. Save your model weights and checkpoints to:
-   ```
-   apps/ai-service/model/artifacts/
-   ```
-
-2. Save any preprocessing pipelines alongside the model.
-
-3. Update `apps/ai-service/model/README.md` with model metadata.
-
-### Step 2: Implement Model Provider
-
-Create a new provider in `apps/ai-service/app/providers/model_provider.py`:
-
-```python
-from .base_provider import BasePredictionProvider
-from ..schemas.prediction import PredictionRequest, PredictionResponse
-
-class ModelPredictionProvider(BasePredictionProvider):
-    def __init__(self, model_path: str):
-        # Load your model here
-        self.model = self._load_model(model_path)
-    
-    async def predict(self, request: PredictionRequest) -> PredictionResponse:
-        # Implement prediction logic
-        pass
-    
-    async def health(self) -> dict:
-        return {"status": "healthy", "model_loaded": True}
-    
-    async def model_info(self) -> dict:
-        return {"version": "1.0.0", "type": "cattle-disease"}
+```
+POST /predict  ->  LocalPredictionProvider
+                     |-- vision branch   (PyTorch MobileNetV3-Small, CPU)
+                     |-- symptom branch  (XGBoost tabular, 33 features)
+                     `-- late fusion     0.60 * vision + 0.40 * symptoms
 ```
 
-### Step 3: Configure Provider Selection
+- `AI_PROVIDER=local` (default) uses these models.
+- `AI_PROVIDER=mock` returns deterministic sample scenarios for offline UI demos
+  and labels them `provider: "mock"`, `model_status: "MOCK"`,
+  `is_simulated: true`.
 
-Set the environment variable:
+## Artifacts
+
+```
+apps/ai-service/model/
+  symptom_model.joblib   XGBoost booster + feature metadata
+  cattle_vision.pth      TorchScript-free state_dict checkpoint
+  vision_meta.json       checkpoint class order + image size
+  metrics_*.json         training / held-out metrics
+```
+
+Artifacts are loaded once at startup. `GET /model-info` reports the loaded
+class lists, providers and fusion weights so the API and UI stay in sync.
+
+## Disease coverage
+
+| Class | Vision | Symptoms |
+| --- | --- | --- |
+| Healthy | yes | yes |
+| Foot and Mouth Disease | yes | yes |
+| Lumpy Skin Disease | yes | yes |
+| Mastitis | no | yes |
+| Bovine Respiratory Disease | no | yes |
+
+Classes without an image class are zeroed in the vision vector before fusion,
+so the symptom branch decides them. This is deliberate: the only public
+mastitis imaging is thermal udder data from other species, and synthetic
+textures would produce confident false positives.
+
+## Retraining
+
 ```bash
-AI_PROVIDER=model
+cd apps/ai-service
+python scripts/fetch_public_datasets.py --all   # checksum-verified download
+python scripts/build_image_dataset.py           # dedupe + stratified split
+python scripts/build_symptom_dataset.py         # reference matrix + priors
+python scripts/train_tabular.py
+python scripts/train_vision.py
+python scripts/evaluate.py                      # writes metrics_full_evaluation.json
+python -m pytest
 ```
 
-### Step 4: Validate Integration
+`scripts/evaluate.py` scores recorded held-out folds only (real images,
+held-out symptom rows), so the numbers cannot be inflated by resampling the
+training distribution.
 
-1. Run the AI service tests
-2. Verify prediction response schema
-3. Check error handling
-4. Validate image handling (if applicable)
+## Response contract
 
-## Response Schema
-
-All predictions (mock or real) must return data conforming to:
+The API contract is provider-independent; the TypeScript types live in
+`packages/shared-types`.
 
 ```typescript
 interface PredictionResponse {
   prediction_id: string;
-  provider: 'mock' | 'model';
-  model_status: 'MOCK' | 'LOADED' | 'ERROR';
-  is_simulated: boolean;
+  provider: 'local' | 'mock';
+  model_status: 'LOADED' | 'MOCK' | 'ERROR';
+  is_simulated?: boolean;
   predicted_disease: string | null;
   confidence: number | null;
-  confidence_interpretation: 'high' | 'medium' | 'low' | 'uncertain';
   severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
-  possible_conditions: Array<{
-    disease: string;
-    confidence: number;
-  }>;
+  class_probabilities: Record<string, number>;   // all 5 classes, percent
+  top_contributing_factors: string[];
+  possible_conditions: Array<{ disease: string; confidence: number }>;
   supporting_symptoms: string[];
   recommendations: string[];
   image_assessment?: {
     status: 'not_analyzed' | 'analyzed' | 'unavailable';
     note?: string;
   };
+  used_image: boolean;
+  used_symptoms: boolean;
+  fusion_weights?: { vision: number; symptoms: number };
   disclaimer: string;
   predicted_at: string;
 }
 ```
 
-## Important Notes
+### Known limitation: no out-of-distribution rejection
 
-- Do NOT replace the Mock provider until the real model is fully validated
-- Keep `AI_PROVIDER=mock` in development even after model integration
-- The frontend does not need any changes when switching providers
-- The database schema does not need modifications
-- The API contract remains identical regardless of provider
+The vision head is a closed 3-way softmax, so any image maps to Healthy, FMD or
+LSD. Measured on unrelated inputs: a blank white frame scores FMD 76%, random
+noise FMD 70%, a photo of a dog "Healthy" 99%. Only severe blur produces a low
+maximum (38%) that would read as uncertain. There is no `unknown` class and no
+abstention path, so callers must validate that an image actually shows cattle
+before trusting the label. Training a rejection class on non-cattle photos is
+the documented upgrade path.
+
+## Swapping in a different model
+
+1. Keep the same 5-class order in `app/constants.py`.
+2. Write artifacts to `apps/ai-service/model/`.
+3. Implement a provider under `app/providers/` returning `PredictionResponse`.
+4. Select it with `AI_PROVIDER`.
+
+No database, API or frontend changes are required.
+
+## Validation checklist
+
+- `python scripts/test_end_to_end.py` — provider routing, aliases, validation
+- `python scripts/test_live_service.py` — running-service smoke test
+- `python -m pytest` — model loading and per-class behaviour

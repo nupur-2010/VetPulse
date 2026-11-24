@@ -49,14 +49,16 @@ services:
       dockerfile: Dockerfile
     container_name: vetpulse-ai-service
     environment:
-      AI_PROVIDER: mock
-      MODEL_PATH: /app/model
+      AI_PROVIDER: local
+      MODEL_PATH: /app/models
+      DATA_DIR: /app/data
+      UPLOAD_DIR: /uploads
       LOG_LEVEL: INFO
     ports:
       - "8000:8000"
     volumes:
       - ./apps/ai-service:/app
-      - ai_model_data:/app/model
+      - ./apps/api/uploads:/uploads:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   web:
@@ -78,4 +80,3 @@ services:
 
 volumes:
   postgres_data:
-  ai_model_data:

@@ -1,11 +1,18 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
 
 from .config import settings
-from .schemas.prediction import PredictionRequest, PredictionResponse, ModelInfo, HealthResponse
-from .services.prediction_service import get_prediction_service, PredictionService
+from .predictor import get_predictor
+from .schemas.prediction import (
+    HealthResponse,
+    ModelInfo,
+    PredictionRequest,
+    PredictionResponse,
+)
+from .services.prediction_service import get_prediction_service
 from .utils.validation import validate_prediction_request
 
 logging.basicConfig(level=settings.LOG_LEVEL)
@@ -14,21 +21,22 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info(f"Starting AI service with provider: {settings.AI_PROVIDER}")
-    try:
-        service = get_prediction_service()
-        logger.info(f"Prediction service initialized: {service}")
-    except Exception as e:
-        logger.error(f"Failed to initialize prediction service: {e}")
-        raise
+    logger.info("Starting VetPulse AI service (provider=%s)", settings.AI_PROVIDER)
+    predictor = get_predictor()
+    if not predictor.ready:
+        logger.error("No model artifacts loaded; /predict will return 503")
+    service = get_prediction_service()
+    app.state.predictor = predictor
+    app.state.prediction_service = service
+    logger.info("Prediction service ready: %s", service.provider.provider_name)
     yield
-    logger.info("Shutting down AI service")
+    logger.info("Shutting down VetPulse AI service")
 
 
 app = FastAPI(
     title="VetPulse AI Service",
-    description="Cattle disease prediction service",
-    version="1.0.0",
+    description="Locally trained tabular + vision cattle disease prediction",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -53,16 +61,29 @@ async def model_info():
     return await service.model_info()
 
 
-@app.post("/predict", response_model=PredictionResponse, tags=["prediction"])
-async def predict(request: PredictionRequest):
-    valid, msg = validate_prediction_request(request)
+async def _run_prediction(request: PredictionRequest) -> PredictionResponse:
+    valid, message = validate_prediction_request(request)
     if not valid:
-        raise HTTPException(status_code=400, detail=msg)
+        raise HTTPException(status_code=400, detail=message)
 
     service = get_prediction_service()
     try:
-        result = await service.predict(request)
-        return result
-    except Exception as e:
-        logger.error(f"Prediction error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return await service.predict(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.exception("Prediction error")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/predict", response_model=PredictionResponse, tags=["prediction"])
+async def predict(request: PredictionRequest):
+    return await _run_prediction(request)
+
+
+@app.post("/assess", response_model=PredictionResponse, tags=["prediction"])
+async def assess(request: PredictionRequest):
+    """Alias used by clients that call the route 'assessment'."""
+    return await _run_prediction(request)

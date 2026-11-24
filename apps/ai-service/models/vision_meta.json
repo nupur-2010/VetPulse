@@ -1,0 +1,32 @@
+{
+  "classes": [
+    "Foot_and_Mouth_Disease",
+    "Healthy",
+    "Lumpy_Skin_Disease"
+  ],
+  "class_to_idx": {
+    "Foot_and_Mouth_Disease": 0,
+    "Healthy": 1,
+    "Lumpy_Skin_Disease": 2
+  },
+  "idx_to_class": {
+    "0": "Foot_and_Mouth_Disease",
+    "1": "Healthy",
+    "2": "Lumpy_Skin_Disease"
+  },
+  "arch": "mobilenet_v3_small",
+  "input_size": 224,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "val_accuracy": 0.918918918918919,
+  "trained_at": "2026-11-24T13:05:52.825726+00:00",
+  "version": "1.0.0"
+}
