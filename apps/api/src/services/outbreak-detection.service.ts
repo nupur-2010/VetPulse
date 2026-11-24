@@ -10,10 +10,13 @@ interface GeoPoint {
   disease: string;
   lat: number;
   lng: number;
+  district?: string;
+  state?: string;
   createdAt: Date;
 }
 
 interface Cluster {
+  name: string;
   disease: string;
   centerLatitude: number;
   centerLongitude: number;
@@ -23,6 +26,9 @@ interface Cluster {
   reportCount: number;
   reportIds: string[];
   status: string;
+  severity: string;
+  district?: string;
+  state?: string;
 }
 
 /**
@@ -110,7 +116,7 @@ export class OutbreakDetectionService {
     }
   }
 
-  private buildCluster(cases: GeoPoint[], status = 'POTENTIAL'): Cluster {
+  private buildCluster(cases: GeoPoint[], forcedStatus?: string): Cluster {
     const avgLat = cases.reduce((sum, c) => sum + c.lat, 0) / cases.length;
     const avgLng = cases.reduce((sum, c) => sum + c.lng, 0) / cases.length;
     // Conservative coverage: max distance from centroid to any member provides the circle radius.
@@ -118,16 +124,33 @@ export class OutbreakDetectionService {
       ...cases.map((c) => this.calculateDistanceKm(avgLat, avgLng, c.lat, c.lng))
     );
 
+    const count = cases.length;
+    const severity = count >= 10 ? 'CRITICAL' : count >= 6 ? 'HIGH' : count >= 4 ? 'MEDIUM' : 'LOW';
+    let status = forcedStatus;
+    if (!status) {
+      if (count >= 10) status = 'SUSPECTED_OUTBREAK';
+      else if (count >= 6) status = 'UNDER_INVESTIGATION';
+      else status = 'POTENTIAL';
+    }
+
+    const district = cases.find((c) => c.district)?.district || 'Maharashtra';
+    const state = cases.find((c) => c.state)?.state || 'Maharashtra';
+    const name = `${district} ${cases[0].disease} Cluster`;
+
     return {
+      name,
       disease: cases[0].disease,
       centerLatitude: avgLat,
       centerLongitude: avgLng,
       radiusKm: Math.round(Math.max(maxDist, 1) * 10) / 10,
       firstReportAt: new Date(Math.min(...cases.map((c) => c.createdAt.getTime()))),
       lastReportAt: new Date(Math.max(...cases.map((c) => c.createdAt.getTime()))),
-      reportCount: cases.length,
+      reportCount: count,
       reportIds: cases.map((c) => c.id),
       status,
+      severity,
+      district,
+      state,
     };
   }
 
@@ -151,6 +174,8 @@ export class OutbreakDetectionService {
         disease: r.prediction!.predictedDisease!,
         lat: r.latitude!,
         lng: r.longitude!,
+        district: r.district,
+        state: r.state,
         createdAt: r.createdAt,
       }));
 
@@ -169,7 +194,7 @@ export class OutbreakDetectionService {
       }
     }
 
-    // Persist new clusters to DB if not already there.
+    // Persist new clusters to DB if not already there, or update existing with latest stats.
     for (const cluster of clusters) {
       const existing = await prisma.diseaseCluster.findFirst({
         where: {
@@ -182,12 +207,33 @@ export class OutbreakDetectionService {
       if (!existing) {
         await prisma.diseaseCluster.create({
           data: {
-            ...cluster,
-            name: `${cluster.disease} Cluster`,
+            name: cluster.name,
+            disease: cluster.disease,
+            centerLatitude: cluster.centerLatitude,
+            centerLongitude: cluster.centerLongitude,
+            radiusKm: cluster.radiusKm,
+            firstReportAt: cluster.firstReportAt,
+            lastReportAt: cluster.lastReportAt,
+            reportCount: cluster.reportCount,
             cattleAffected: cluster.reportCount,
+            reportIds: cluster.reportIds,
             status: cluster.status as any,
           },
         });
+      } else {
+        // Keep existing status if modified by admin/vet (e.g. LAB_CONFIRMED), update counts
+        await prisma.diseaseCluster.update({
+          where: { id: existing.id },
+          data: {
+            name: cluster.name,
+            reportCount: cluster.reportCount,
+            cattleAffected: cluster.reportCount,
+            radiusKm: cluster.radiusKm,
+            lastReportAt: cluster.lastReportAt,
+            reportIds: cluster.reportIds,
+          },
+        });
+        cluster.status = existing.status;
       }
     }
 

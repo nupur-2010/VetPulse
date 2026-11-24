@@ -70,8 +70,30 @@ export class AnalyticsService {
       clusters = await prisma.diseaseCluster.findMany({ where, orderBy: { lastReportAt: 'desc' } });
     }
 
-    if (minReports) return clusters.filter(c => c.reportCount >= minReports);
-    return clusters;
+    const mapped = clusters.map((c) => {
+      const statusUpper = (c.status || '').toUpperCase();
+      let severity = 'POTENTIAL';
+      if (statusUpper === 'LAB_CONFIRMED') severity = 'LAB_CONFIRMED';
+      else if (statusUpper === 'SUSPECTED_OUTBREAK' || c.reportCount >= 10) severity = 'CRITICAL';
+      else if (statusUpper === 'UNDER_INVESTIGATION' || c.reportCount >= 6) severity = 'HIGH';
+      else if (c.reportCount >= 4) severity = 'MEDIUM';
+      else severity = 'LOW';
+
+      // Extract district from cluster name or fallback to Maharashtra
+      const districtMatch = c.name?.match(/^([A-Za-z]+)\s+/);
+      const district = districtMatch ? districtMatch[1] : 'Maharashtra';
+
+      return {
+        ...c,
+        district,
+        state: 'Maharashtra',
+        severity,
+        riskLevel: severity,
+      };
+    });
+
+    if (minReports) return mapped.filter((c) => c.reportCount >= minReports);
+    return mapped;
   }
 
   async getClusterById(clusterId: string): Promise<any> {
