@@ -106,7 +106,52 @@ export class AnalyticsService {
     if (search) where.email = { contains: search, mode: 'insensitive' };
 
     const [users, total] = await Promise.all([
-      prisma.user.findMany({ where, select: { id: true, email: true, role: true, isActive: true, emailVerified: true, createdAt: true, farmerProfile: { select: { firstName: true, lastName: true, state: true, district: true } }, vetProfile: { select: { firstName: true, lastName: true, specialization: true } } }, skip, take: limit }),
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          isActive: true,
+          emailVerified: true,
+          createdAt: true,
+          farmerProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              address: true,
+              state: true,
+              district: true,
+              village: true,
+              createdAt: true,
+            },
+          },
+          vetProfile: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+              specialization: true,
+              licenseNumber: true,
+              licenseState: true,
+              yearsOfExperience: true,
+              clinicName: true,
+              clinicAddress: true,
+              consultationFee: true,
+              rating: true,
+              totalReviews: true,
+              isAvailable: true,
+              createdAt: true,
+            },
+          },
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
       prisma.user.count({ where }),
     ]);
     return { data: users, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
