@@ -17,6 +17,14 @@ export const config = {
   },
   
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+
+  // Public base URL that the AI service uses to download report photos.
+  // Railway injects RAILWAY_PUBLIC_DOMAIN once a domain is generated.
+  publicApiUrl:
+    process.env.PUBLIC_API_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : `http://127.0.0.1:${process.env.PORT || '3000'}`),
   
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes

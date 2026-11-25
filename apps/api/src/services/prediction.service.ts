@@ -51,7 +51,7 @@ export class PredictionService {
       if (!report) return;
 
       const symptoms = report.symptoms.map(s => s.symptomName);
-      const baseUrl = `http://127.0.0.1:${config.port}`;
+      const baseUrl = config.publicApiUrl.replace(/\/$/, '');
       const imageUrls = report.photos.map(photo =>
         photo.photoUrl.startsWith('http') ? photo.photoUrl : `${baseUrl}${photo.photoUrl}`
       );
