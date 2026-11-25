@@ -58,5 +58,9 @@ __pycache__/
 # AI datasets / trained artifacts
 apps/ai-service/data/raw/
 apps/ai-service/data/images/
-apps/ai-service/models/*.pth
-apps/ai-service/models/*.joblib
+# Trained model weights are required at runtime and deployed with the service (~8 MB total).
+!apps/ai-service/models/cattle_vision.pth
+!apps/ai-service/models/symptom_model.joblib
+
+# Local Netlify CLI state
+.netlify/
