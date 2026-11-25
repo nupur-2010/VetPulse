@@ -82,22 +82,35 @@ symptoms (0.40), then applies calibration and abstention.
 
 ## Redeploy
 
-The Railway CLI uploads a service directory as the build root. Because the
-repository is a monorepo, deploy from a folder that contains only that service's
-files (or configure the service Root Directory in the dashboard).
+Railway is set up for **uploaded Dockerfile deployments**, not GitHub
+auto-deploy. The GitHub source was detached and the service Root Directory is
+empty; both services are built from an upload whose archive root contains the
+service's `Dockerfile`.
+
+`railway up` walks up to the git root, so running it inside `apps/api` still
+uploads the monorepo root. To get a correct build root, copy the service files
+into a clean folder and upload that folder:
 
 ```bash
 # API
-cd apps/api
-railway up -s VetPulse
+mkdir /tmp/vetpulse-api && cd /tmp/vetpulse-api
+cp -r "$REPO"/apps/api/{package.json,package-lock.json,tsconfig.json,Dockerfile,.dockerignore,railway.json,prisma,src} .
+railway up -p <project-id> -e production -s VetPulse
 
 # AI service
-cd apps/ai-service
-railway up -s ai-service
+mkdir /tmp/vetpulse-ai && cd /tmp/vetpulse-ai
+cp -r "$REPO"/apps/ai-service/{app,models,requirements.txt,Dockerfile,.dockerignore,railway.json} .
+mkdir data && cp "$REPO"/apps/ai-service/data/cattle_symptoms.csv data/
+railway up -p <project-id> -e production -s ai-service
 ```
 
-If `railway up` is run from the repository root it uploads the monorepo root and
-Railpack fails with "No start command detected". Use the service directory.
+On Windows, use `Copy-Item` with the same file list. Do not include
+`node_modules`, `dist`, `.env`, `uploads`, or `apps/ai-service/data/raw`.
+
+Why not GitHub auto-deploy: Railway's Railpack build of `apps/api` starts but
+never passes the `/api/health` check, while the Dockerfile image does. The API
+Dockerfile is the supported production path. If you later set a Root Directory,
+keep it empty unless you also switch the builder deliberately.
 
 Frontend:
 
