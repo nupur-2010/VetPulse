@@ -95,10 +95,17 @@ export function AssessmentResult() {
 
         <div className="flex items-center gap-2">
           {isConsultationRequested && (
-            <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1 shadow-sm">
-              <Clock className="w-3.5 h-3.5 text-amber-600" />
-              Consultation Sent
-            </span>
+            report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED' || !!report.vetReview ? (
+              <span className="px-2.5 py-1 rounded-full bg-teal-100 text-teal-900 border border-teal-300 text-xs font-bold flex items-center gap-1 shadow-sm">
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                Consultation Completed & Reviewed
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1 shadow-sm">
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                Consultation Sent
+              </span>
+            )
           )}
           <Badge variant={
             report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED'
@@ -350,15 +357,15 @@ export function AssessmentResult() {
               )}
               <div>
                 <p className="font-bold text-stone-900">
-                  {report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED'
-                    ? 'Report Reviewed by Veterinarian'
+                  {report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED' || !!report.vetReview
+                    ? (isConsultationRequested ? 'Consultation Completed & Reviewed by Doctor' : 'Report Reviewed by Veterinarian')
                     : isConsultationRequested
                     ? 'Consultation Requested'
                     : 'Awaiting Review'}
                 </p>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  {report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED'
-                    ? 'A qualified doctor has reviewed this case. See clinical remarks above.'
+                  {report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED' || !!report.vetReview
+                    ? 'A qualified veterinarian has examined this report and submitted their clinical diagnosis and remarks above.'
                     : isConsultationRequested
                     ? 'Your consultation request is in the state veterinary queue.'
                     : 'Submitted report is visible to certified veterinarians in your state.'}
