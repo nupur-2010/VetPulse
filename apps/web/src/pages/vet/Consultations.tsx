@@ -56,12 +56,16 @@ export function VetConsultations() {
                 const report = consultation.report
                 const farmer = consultation.farmer
                 const cattle = report?.cattle
-                const disease = report?.prediction?.predictedDisease || 'Health Assessment'
+                const isCompleted = consultation.status === 'COMPLETED' || report?.status === 'CONFIRMED' || report?.status === 'VET_REVIEWED' || !!report?.vetReview
+                const confirmedDisease = report?.vetReview?.alternativeDiagnosis
+                const disease = confirmedDisease || report?.prediction?.predictedDisease || 'Health Assessment'
 
                 return (
                   <div
                     key={consultation.id}
-                    className="p-5 rounded-xl border border-stone-200 hover:border-teal-300 hover:shadow-sm transition-all bg-white"
+                    className={`p-5 rounded-xl border transition-all bg-white ${
+                      isCompleted ? 'border-emerald-200 bg-emerald-50/10' : 'border-stone-200 hover:border-teal-300 hover:shadow-sm'
+                    }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="space-y-2 flex-1">
@@ -71,12 +75,12 @@ export function VetConsultations() {
                           </span>
                           <Badge
                             variant={
-                              consultation.status === 'REQUESTED' ? 'warning' :
+                              isCompleted ? 'success' :
                               consultation.status === 'ACCEPTED' ? 'info' :
-                              consultation.status === 'COMPLETED' ? 'success' : 'default'
+                              consultation.status === 'REQUESTED' ? 'warning' : 'default'
                             }
                           >
-                            {consultation.status}
+                            {isCompleted ? 'COMPLETED & REVIEWED' : consultation.status}
                           </Badge>
                           {report?.reportNumber && (
                             <span className="font-mono text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
@@ -114,9 +118,16 @@ export function VetConsultations() {
                             {cattle?.tagNumber && <span className="ml-2 font-mono text-stone-500">Tag #{cattle.tagNumber}</span>}
                           </div>
                           <div>
-                            <strong>Suspected Disease:</strong> <span className="font-semibold text-stone-900">{disease}</span>
+                            <strong>{confirmedDisease ? 'Confirmed Diagnosis:' : 'Suspected Condition:'}</strong>{' '}
+                            <span className="font-semibold text-stone-900">{disease}</span>
                           </div>
-                          {consultation.reason && (
+                          {report?.vetReview?.notes && (
+                            <div className="pt-1.5 border-t border-stone-200 text-emerald-950 font-medium">
+                              <strong>Doctor's Remarks: </strong>
+                              <span className="italic">"{report.vetReview.notes}"</span>
+                            </div>
+                          )}
+                          {consultation.reason && !report?.vetReview?.notes && (
                             <div className="pt-1 text-stone-600 italic">
                               "{consultation.reason}"
                             </div>
@@ -127,8 +138,8 @@ export function VetConsultations() {
                       {/* Action Button */}
                       <div className="shrink-0 self-start sm:self-center">
                         <Link to={`/vet/reports/${consultation.reportId}`}>
-                          <Button className="btn-pasture text-xs font-bold gap-1 shadow-sm">
-                            <span>Review Case Report</span>
+                          <Button className={`text-xs font-bold gap-1 shadow-sm ${isCompleted ? 'btn-secondary' : 'btn-pasture'}`}>
+                            <span>{isCompleted ? 'View / Edit Review' : 'Review Case Report'}</span>
                             <ChevronRight className="w-4 h-4" />
                           </Button>
                         </Link>

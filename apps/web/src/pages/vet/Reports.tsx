@@ -114,14 +114,17 @@ export function VetReports() {
           ) : (
             <div className="space-y-3">
               {filteredReports.map(report => {
-                const disease = report.prediction?.predictedDisease || 'Pending Assessment'
-                const isReviewed = report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED'
+                const confirmedDisease = report.vetReview?.alternativeDiagnosis
+                const disease = confirmedDisease || report.prediction?.predictedDisease || 'Pending Assessment'
+                const isReviewed = report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED' || !!report.vetReview
 
                 return (
                   <Link
                     key={report.id}
                     to={`/vet/reports/${report.id}`}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-stone-200 hover:border-teal-300 hover:bg-stone-50/70 transition-all gap-3 bg-white"
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border transition-all gap-3 bg-white ${
+                      isReviewed ? 'border-emerald-200 hover:border-emerald-400 bg-emerald-50/10' : 'border-stone-200 hover:border-teal-300'
+                    }`}
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -136,9 +139,15 @@ export function VetReports() {
                           {report.status.replace('_', ' ')}
                         </Badge>
                         {report.consultationRequested && (
-                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                            Consultation Requested
-                          </span>
+                          isReviewed ? (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
+                              Consultation Completed
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                              Consultation Requested
+                            </span>
+                          )
                         )}
                       </div>
 
@@ -147,18 +156,34 @@ export function VetReports() {
                         <strong>Location:</strong> {report.village ? `${report.village}, ` : ''}{report.district}, {report.state}
                       </p>
 
-                      <div className="flex items-center gap-2 mt-1.5 text-xs text-stone-500">
-                        <Calendar className="w-3.5 h-3.5 text-stone-400" />
-                        <span>Submitted: <strong className="text-stone-700 font-medium">{formatDateTime(report.createdAt)}</strong></span>
+                      <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-stone-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                          <span>Submitted: <strong className="text-stone-700 font-medium">{formatDateTime(report.createdAt)}</strong></span>
+                        </span>
                         <span>•</span>
-                        <span className="text-stone-700">Condition: <strong>{disease}</strong></span>
+                        <span className="text-stone-700">
+                          {confirmedDisease ? (
+                            <span>Vet Diagnosis: <strong className="text-emerald-800">{confirmedDisease}</strong></span>
+                          ) : (
+                            <span>Condition: <strong>{disease}</strong></span>
+                          )}
+                        </span>
                       </div>
+
+                      {/* Doctor Remarks Snippet */}
+                      {report.vetReview?.notes && (
+                        <div className="mt-2 text-xs bg-emerald-50 text-emerald-950 p-2 rounded-lg border border-emerald-200">
+                          <span className="font-bold">Doctor's Clinical Notes: </span>
+                          <span className="italic">"{report.vetReview.notes}"</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-left sm:text-right shrink-0">
                       <div className="flex items-center sm:justify-end gap-1 text-xs font-semibold text-teal-700">
                         {isReviewed ? (
-                          <span className="flex items-center gap-1 text-emerald-700">
+                          <span className="flex items-center gap-1 text-emerald-700 font-bold">
                             <CheckCircle className="w-4 h-4" /> Reviewed
                           </span>
                         ) : (
@@ -167,7 +192,9 @@ export function VetReports() {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-stone-400 mt-1 block">Click to review report →</span>
+                      <span className="text-xs text-stone-400 mt-1 block">
+                        {isReviewed ? 'Click to view / edit review →' : 'Click to review report →'}
+                      </span>
                     </div>
                   </Link>
                 )

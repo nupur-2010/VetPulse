@@ -152,7 +152,16 @@ export class ConsultationService {
             include: {
               symptoms: true,
               photos: true,
-              prediction: true,
+              prediction: {
+                include: {
+                  vetReviews: {
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                      vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+                    },
+                  },
+                },
+              },
               cattle: true,
             },
           },
@@ -166,7 +175,19 @@ export class ConsultationService {
       prisma.consultation.count({ where }),
     ]);
 
-    return { data: consultations, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const formattedConsultations = consultations.map((c) => {
+      const item = c as any;
+      if (item.report?.prediction?.vetReviews && item.report.prediction.vetReviews.length > 0) {
+        item.report.vetReview = item.report.prediction.vetReviews[0];
+        // If the report has been reviewed, the consultation is completed
+        if (item.status === 'REQUESTED' || item.status === 'ACCEPTED') {
+          item.status = 'COMPLETED';
+        }
+      }
+      return item;
+    });
+
+    return { data: formattedConsultations, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findAllForFarmer(farmerId: string, query: ConsultationListQuery): Promise<PaginatedResponse<any>> {
@@ -177,11 +198,47 @@ export class ConsultationService {
     const skip = (page - 1) * limit;
 
     const [consultations, total] = await Promise.all([
-      prisma.consultation.findMany({ where, include: { report: { include: { symptoms: true, prediction: true, cattle: true } }, vet: true }, orderBy, skip, take: limit }),
+      prisma.consultation.findMany({
+        where,
+        include: {
+          report: {
+            include: {
+              symptoms: true,
+              photos: true,
+              prediction: {
+                include: {
+                  vetReviews: {
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                      vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
+                    },
+                  },
+                },
+              },
+              cattle: true,
+            },
+          },
+          vet: true,
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
       prisma.consultation.count({ where }),
     ]);
 
-    return { data: consultations, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const formattedConsultations = consultations.map((c) => {
+      const item = c as any;
+      if (item.report?.prediction?.vetReviews && item.report.prediction.vetReviews.length > 0) {
+        item.report.vetReview = item.report.prediction.vetReviews[0];
+        if (item.status === 'REQUESTED' || item.status === 'ACCEPTED') {
+          item.status = 'COMPLETED';
+        }
+      }
+      return item;
+    });
+
+    return { data: formattedConsultations, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findById(consultationId: string): Promise<any> {
