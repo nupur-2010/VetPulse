@@ -75,7 +75,6 @@ export function ReportDetail() {
   const isLowConfidence = confidence < 0.4
   const isConsultationRequested = report.consultationRequested || requestSuccess
   const vetReview = report.vetReview || prediction?.vetReviews?.[0]
-  const isReviewed = report.status === 'VET_REVIEWED' || report.status === 'CONFIRMED' || !!vetReview
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-12 page-enter">
@@ -92,17 +91,10 @@ export function ReportDetail() {
               <span>{report.status.replace('_', ' ')}</span>
             </div>
             {isConsultationRequested && (
-              isReviewed ? (
-                <span className="px-2.5 py-1 rounded-full bg-teal-100 text-teal-900 border border-teal-300 text-xs font-bold flex items-center gap-1 shadow-sm">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  Consultation Completed & Reviewed
-                </span>
-              ) : (
-                <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1 shadow-sm">
-                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                  Consultation Sent
-                </span>
-              )
+              <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold flex items-center gap-1 shadow-sm">
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                Consultation Sent
+              </span>
             )}
           </div>
           <p className="text-stone-500 text-xs mt-1 flex items-center gap-2">

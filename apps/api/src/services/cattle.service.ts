@@ -229,7 +229,6 @@ export class CattleService {
           include: {
             candidates: true,
             vetReviews: {
-              orderBy: { createdAt: 'desc' },
               include: {
                 vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
               },

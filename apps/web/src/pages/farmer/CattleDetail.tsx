@@ -322,16 +322,9 @@ export function CattleDetail() {
                             </Badge>
                           )}
                           {report.consultationRequested && (
-                            hasVetReview ? (
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-900 border border-teal-300 flex items-center gap-1 shadow-sm">
-                                <CheckCircle2 className="w-3 h-3 text-teal-600" />
-                                Consultation Completed
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                                Consultation Sent
-                              </span>
-                            )
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                              Consultation Sent
+                            </span>
                           )}
                         </div>
 

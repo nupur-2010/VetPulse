@@ -96,9 +96,6 @@ export function VetReportReview() {
       setSubmitError(null)
       queryClient.invalidateQueries({ queryKey: ['reports', id] })
       queryClient.invalidateQueries({ queryKey: ['vet-reports'] })
-      queryClient.invalidateQueries({ queryKey: ['vet-consultations'] })
-      queryClient.invalidateQueries({ queryKey: ['reports'] })
-      queryClient.refetchQueries({ queryKey: ['reports', id] })
     },
     onError: (err: any) => {
       setSubmitError(err.response?.data?.message || err.message || 'Failed to submit review')

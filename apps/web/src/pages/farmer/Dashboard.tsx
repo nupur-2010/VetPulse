@@ -297,19 +297,12 @@ function StatusBadge({
         </span>
       )}
 
-      {/* Outside indicator for consultation sent / reviewed */}
+      {/* Outside indicator for consultation sent */}
       {consultationRequested && (
-        isReviewed ? (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-900 border border-teal-300 flex items-center gap-1 shadow-sm">
-            <CheckCircle2 className="w-3 h-3 text-teal-600" />
-            Consultation Completed & Reviewed
-          </span>
-        ) : (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-            <Clock className="w-3 h-3 text-amber-600" />
-            Consultation Sent (Pending Review)
-          </span>
-        )
+        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+          <Clock className="w-3 h-3 text-amber-600" />
+          Consultation Sent
+        </span>
       )}
     </div>
   )
