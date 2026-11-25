@@ -1,8 +1,8 @@
 import prisma from '../config/database.js';
 
 const EARTH_RADIUS_KM = 6371;
-const CLUSTER_RADIUS_KM = 5; // DBSCAN eps (km) - 5km radius
-const MIN_CASES_FOR_CLUSTER = 7; // DBSCAN minPts - 7 cases minimum
+const CLUSTER_RADIUS_KM = 5; // DBSCAN eps (km) - localized epidemiological containment zone
+const MIN_CASES_FOR_CLUSTER = 3; // DBSCAN minPts - minimum 3 cases to form a low-severity cluster
 
 interface GeoPoint {
   id: string;
@@ -125,11 +125,11 @@ export class OutbreakDetectionService {
     );
 
     const count = cases.length;
-    const severity = count >= 16 ? 'CRITICAL' : count >= 12 ? 'HIGH' : count >= 9 ? 'MEDIUM' : 'LOW';
+    const severity = count >= 10 ? 'CRITICAL' : count >= 6 ? 'HIGH' : count >= 4 ? 'MEDIUM' : 'LOW';
     let status = forcedStatus;
     if (!status) {
-      if (count >= 16) status = 'SUSPECTED_OUTBREAK';
-      else if (count >= 11) status = 'UNDER_INVESTIGATION';
+      if (count >= 10) status = 'SUSPECTED_OUTBREAK';
+      else if (count >= 6) status = 'UNDER_INVESTIGATION';
       else status = 'POTENTIAL';
     }
 

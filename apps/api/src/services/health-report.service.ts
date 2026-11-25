@@ -109,7 +109,6 @@ export class HealthReportService {
           prediction: {
             include: {
               vetReviews: {
-                orderBy: { createdAt: 'desc' },
                 include: {
                   vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
                 },
@@ -153,7 +152,6 @@ export class HealthReportService {
           include: {
             candidates: true,
             vetReviews: {
-              orderBy: { createdAt: 'desc' },
               include: {
                 vet: { select: { id: true, firstName: true, lastName: true, specialization: true } },
               },

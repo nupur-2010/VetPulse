@@ -40,12 +40,12 @@ export function FarmerProfilePage() {
     address: farmerProfile?.address || '',
   })
 
-  const { data: cattleData, isLoading: isLoadingCattle } = useQuery({
+  const { data: cattleData } = useQuery({
     queryKey: ['cattle-count'],
     queryFn: () => cattleApi.list({ limit: 1 }),
   })
 
-  const { data: reportsData, isLoading: isLoadingReports } = useQuery({
+  const { data: reportsData } = useQuery({
     queryKey: ['reports-count'],
     queryFn: () => reportsApi.list({ limit: 1 }),
   })
@@ -169,9 +169,7 @@ export function FarmerProfilePage() {
               <BookOpen className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-emerald-950">
-                {isLoadingCattle ? '…' : (cattleData?.total ?? 0)}
-              </p>
+              <p className="text-2xl font-black text-emerald-950">{cattleData?.total ?? 0}</p>
               <p className="text-xs font-semibold text-emerald-700">Registered Cattle</p>
             </div>
           </CardContent>
@@ -183,9 +181,7 @@ export function FarmerProfilePage() {
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-2xl font-black text-amber-950">
-                {isLoadingReports ? '…' : (reportsData?.total ?? 0)}
-              </p>
+              <p className="text-2xl font-black text-amber-950">{reportsData?.total ?? 0}</p>
               <p className="text-xs font-semibold text-amber-700">Health Assessments</p>
             </div>
           </CardContent>
