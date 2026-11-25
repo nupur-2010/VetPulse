@@ -64,7 +64,31 @@ export class PredictionService {
         image_urls: imageUrls.length > 0 ? imageUrls : undefined,
       };
 
-      const ai = await this.callAiService(payload);
+      let ai: AiPrediction;
+      let isSimulated = false;
+      let modelStatus = 'LOADED';
+      let providerName = 'local-fusion';
+
+      try {
+        ai = await this.callAiService(payload);
+        providerName = ai.provider ?? 'local-fusion';
+        modelStatus = 'LOADED';
+      } catch (serviceErr) {
+        console.warn(
+          'AI service unreachable or returned error, using intelligent clinical fallback:',
+          serviceErr instanceof Error ? serviceErr.message : serviceErr
+        );
+        ai = this.generateFallbackPrediction(
+          symptoms,
+          report.temperature,
+          report.severity,
+          report.symptomDuration
+        );
+        isSimulated = true;
+        providerName = ai.provider ?? 'rule-based-fallback';
+        modelStatus = 'MOCK';
+      }
+
       const confidence = Math.max(0, Math.min(1, (ai.confidence ?? 0) / 100));
 
       const ranked = Object.entries(ai.class_probabilities ?? {})
@@ -88,9 +112,9 @@ export class PredictionService {
 
       const data = {
         predictionId: ai.prediction_id ?? `PRED-${uuidv4()}`,
-        provider: ai.provider ?? 'local-fusion',
-        modelStatus: 'LOADED',
-        isSimulated: false,
+        provider: providerName,
+        modelStatus,
+        isSimulated,
         predictedDisease: ai.predicted_disease,
         confidence,
         confidenceInterpretation: this.getConfidenceInterpretation(
@@ -147,9 +171,9 @@ export class PredictionService {
         await prisma.prediction.upsert({
           where: { reportId },
           update: {
-            provider: 'local-fusion',
+            provider: 'rule-based-fallback',
             modelStatus: 'ERROR',
-            isSimulated: false,
+            isSimulated: true,
             status: 'FAILED',
             errorMessage: error instanceof Error ? error.message : 'Unknown error',
             disclaimer: 'The AI service could not process this report.',
@@ -157,9 +181,9 @@ export class PredictionService {
           create: {
             reportId,
             predictionId: `PRED-ERROR-${Date.now()}`,
-            provider: 'local-fusion',
+            provider: 'rule-based-fallback',
             modelStatus: 'ERROR',
-            isSimulated: false,
+            isSimulated: true,
             status: 'FAILED',
             errorMessage: error instanceof Error ? error.message : 'Unknown error',
             disclaimer: 'The AI service could not process this report.',
@@ -169,6 +193,161 @@ export class PredictionService {
         console.error('Failed to persist prediction error:', persistError);
       }
     }
+  }
+
+  private generateFallbackPrediction(
+    symptoms: string[],
+    temperature?: number | null,
+    severity?: string | null,
+    _duration?: string | null
+  ): AiPrediction {
+    const symptomSet = new Set(symptoms.map(s => s.toLowerCase().trim()));
+
+    const diseaseProfiles: Array<{
+      disease: string;
+      keywords: string[];
+      baseWeight: number;
+    }> = [
+      {
+        disease: 'Foot-and-Mouth Disease',
+        keywords: [
+          'mouth ulcers', 'blisters', 'excessive salivation', 'salivation',
+          'drooling', 'difficulty chewing', 'hoof lesions', 'lameness', 'fever'
+        ],
+        baseWeight: 0.1,
+      },
+      {
+        disease: 'Lumpy Skin Disease',
+        keywords: [
+          'skin nodules', 'nodules', 'lesions', 'swelling', 'lumps',
+          'fever', 'enlarged lymph nodes', 'discharge'
+        ],
+        baseWeight: 0.1,
+      },
+      {
+        disease: 'Mastitis',
+        keywords: [
+          'swollen udder', 'udder swelling', 'abnormal milk', 'clots in milk',
+          'pain during milking', 'discolored milk', 'hot udder'
+        ],
+        baseWeight: 0.1,
+      },
+      {
+        disease: 'Bovine Respiratory Disease',
+        keywords: [
+          'cough', 'coughing', 'nasal discharge', 'difficulty breathing',
+          'rapid breathing', 'laboured breathing', 'fever', 'lethargy', 'runny nose'
+        ],
+        baseWeight: 0.1,
+      },
+      {
+        disease: 'Blackleg',
+        keywords: [
+          'muscle swelling', 'swollen leg', 'lameness', 'high fever',
+          'depression', 'crackling skin', 'loss of appetite'
+        ],
+        baseWeight: 0.05,
+      },
+      {
+        disease: 'Anthrax',
+        keywords: [
+          'sudden death', 'dark blood', 'high fever', 'bleeding',
+          'severe depression', 'swelling in neck'
+        ],
+        baseWeight: 0.05,
+      },
+      {
+        disease: 'Haemorrhagic Septicaemia',
+        keywords: [
+          'swelling in throat', 'throat swelling', 'respiratory distress',
+          'high fever', 'salivation', 'depression'
+        ],
+        baseWeight: 0.05,
+      },
+      {
+        disease: 'Theileriosis',
+        keywords: [
+          'enlarged lymph nodes', 'pale mucous membranes', 'fever',
+          'tick infestation', 'anemia', 'weakness'
+        ],
+        baseWeight: 0.05,
+      },
+      {
+        disease: 'Brucellosis',
+        keywords: [
+          'abortion', 'retained placenta', 'reduced milk', 'stillbirth',
+          'joint swelling'
+        ],
+        baseWeight: 0.05,
+      },
+      {
+        disease: 'Clostridial Diseases',
+        keywords: [
+          'muscle tremors', 'bloat', 'stiffness', 'sudden weakness',
+          'dark muscle'
+        ],
+        baseWeight: 0.05,
+      },
+    ];
+
+    let bestScore = 0;
+    let predictedDisease = 'Healthy';
+    const scores: Record<string, number> = {};
+
+    for (const profile of diseaseProfiles) {
+      let matches = 0;
+      for (const kw of profile.keywords) {
+        for (const sym of symptomSet) {
+          if (sym.includes(kw) || kw.includes(sym)) {
+            matches += 1;
+          }
+        }
+      }
+      const score = profile.baseWeight + matches * 2.5;
+      scores[profile.disease] = score;
+      if (matches > 0 && score > bestScore) {
+        bestScore = score;
+        predictedDisease = profile.disease;
+      }
+    }
+
+    if (bestScore === 0) {
+      if (symptoms.length > 0) {
+        predictedDisease = 'Bovine Respiratory Disease';
+        scores['Bovine Respiratory Disease'] = (scores['Bovine Respiratory Disease'] || 0) + 2.0;
+      } else {
+        predictedDisease = 'Healthy';
+        scores['Healthy'] = 3.0;
+      }
+    }
+
+    const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+    const classProbabilities: Record<string, number> = {};
+    for (const [d, s] of Object.entries(scores)) {
+      classProbabilities[d] = Math.round((s / totalScore) * 1000) / 10;
+    }
+
+    const topProbability = classProbabilities[predictedDisease] ?? 70;
+    const confidenceVal = Math.min(95, Math.max(55, Math.round(topProbability)));
+
+    return {
+      prediction_id: `FALLBACK-${Date.now()}`,
+      provider: 'rule-based-fallback',
+      predicted_disease: predictedDisease,
+      confidence: confidenceVal,
+      class_probabilities: classProbabilities,
+      top_contributing_factors: symptoms.length > 0 ? symptoms : ['General assessment'],
+      supporting_symptoms: symptoms,
+      severity: severity || (temperature && temperature > 39.5 ? 'high' : 'moderate'),
+      recommendations: [
+        `Isolate the animal immediately if ${predictedDisease} is suspected`,
+        'Schedule an immediate clinical evaluation by a licensed veterinarian',
+        'Monitor temperature twice daily and log any new symptoms',
+        'Ensure access to clean drinking water and fresh forage',
+      ],
+      disclaimer: 'Generated via rule-based diagnostic fallback. Confirm with a licensed veterinarian.',
+      confidence_band: confidenceVal >= 80 ? 'high' : confidenceVal >= 65 ? 'medium' : 'low',
+    };
   }
 
   private async callAiService(payload: Record<string, unknown>): Promise<AiPrediction> {

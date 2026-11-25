@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting VetPulse AI service (provider=%s)", settings.AI_PROVIDER)
     predictor = get_predictor()
     if not predictor.ready:
-        logger.error("No model artifacts loaded; /predict will return 503")
+        logger.warning("No model artifacts loaded; /predict will use rule-based fallback provider")
     service = get_prediction_service()
     app.state.predictor = predictor
     app.state.prediction_service = service
