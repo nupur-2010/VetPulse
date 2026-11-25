@@ -16,8 +16,41 @@ app.set('trust proxy', 1)
 
 // Security middleware
 app.use(helmet())
+
+// CORS: allow the configured client origin plus Netlify branch/deploy-preview
+// domains such as https://<deploy>--<site>.netlify.app. Localhost is allowed
+// outside production so the Vite dev server keeps working.
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true // same-origin requests and server-side clients
+  if (origin === config.clientUrl) return true
+
+  try {
+    const url = new URL(origin)
+    const client = new URL(config.clientUrl)
+
+    if (
+      client.hostname.endsWith('.netlify.app') &&
+      url.protocol === 'https:' &&
+      url.hostname.endsWith(`--${client.hostname}`)
+    ) {
+      return true
+    }
+
+    if (
+      config.nodeEnv !== 'production' &&
+      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+    ) {
+      return true
+    }
+  } catch {
+    return false
+  }
+
+  return false
+}
+
 app.use(cors({
-  origin: config.clientUrl,
+  origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
   credentials: true,
 }))
 

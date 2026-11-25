@@ -58,9 +58,12 @@ export function LoginPage() {
       }
     },
     onError: (error: any) => {
-      setError('email', {
-        message: error.response?.data?.message || 'Invalid credentials',
-      })
+      const apiMessage =
+        error.response?.data?.error?.message || error.response?.data?.message
+      const message = error.response
+        ? apiMessage || 'Invalid email or password'
+        : 'Cannot reach the server. Check your connection and try again.'
+      setError('email', { message })
     },
   })
 
