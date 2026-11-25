@@ -1,0 +1,13 @@
+data/raw
+data/images
+tests
+scripts
+.pytest_cache
+**/__pycache__
+*.pyc
+.venv
+venv
+.env
+.env.*
+*.log
+.DS_Store

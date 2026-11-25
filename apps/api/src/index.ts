@@ -9,6 +9,11 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 
 const app = express()
 
+// Railway (and most PaaS hosts) terminate TLS at a proxy and forward the
+// client IP via X-Forwarded-For. Trust exactly one proxy hop so rate limiting
+// and logging see the real client instead of throwing.
+app.set('trust proxy', 1)
+
 // Security middleware
 app.use(helmet())
 app.use(cors({

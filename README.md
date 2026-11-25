@@ -2,9 +2,23 @@
 
 **VetPulse** is a comprehensive cattle health management platform designed for Indian cattle farmers. It helps farmers report health issues, receive AI-assisted preliminary disease assessments, connect with veterinarians, and enables administrators to monitor potential disease outbreaks geographically.
 
-## ⚠️ Important Notice
+## Live Deployment
 
-This version uses **mock AI predictions only**. No actual machine learning model is integrated. The mock predictions are clearly labeled as simulated/demo outputs and are for demonstration purposes only.
+| Component | URL |
+|---|---|
+| Web app | https://dulcet-lokum-81c6ac.netlify.app |
+| API | https://vetpulse-production-5744ba91.up.railway.app |
+| AI service | https://ai-service-production-47fbb141.up.railway.app |
+| Database | Railway PostgreSQL (private network) |
+
+The AI service runs the locally trained models — XGBoost for symptoms,
+MobileNetV3-Small for skin/lesion images, and 0.60/0.40 late fusion with
+calibration and abstention. It does not call any external AI provider. Predictions
+are labelled with provider, model status and confidence band; low-evidence cases
+are returned with a low-confidence flag and vet-review recommendation.
+
+See [docs/deployment.md](docs/deployment.md) for environment variables and
+redeploy commands.
 
 ## Features
 
@@ -148,8 +162,8 @@ After seeding, you can use these demo accounts:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Farmer | ramesh_pawar@demo.com | Demo@123 |
-| Veterinarian | dr.meena_sharma@demo.com | Demo@123 |
+| Farmer | farmer@vetpulse.com | Farmer@123 |
+| Veterinarian | vet@vetpulse.com | Vet@12345 |
 | Admin | admin@vetpulse.com | Admin@123 |
 
 ## API Documentation
@@ -247,17 +261,27 @@ UI demos; its responses are labelled `is_simulated: true`.
 
 ## Deployment
 
-### Frontend (Vercel)
+Production runs on Railway (API, AI service, PostgreSQL) and Netlify (web).
+Full details, including environment variables and redeploy commands, are in
+[docs/deployment.md](docs/deployment.md).
+
+### Frontend (Netlify)
 ```bash
-cd apps/web
-vercel deploy
+netlify deploy --prod
 ```
 
-### Backend (Render/Northflank)
-Deploy the API container with environment variables.
+### Backend and AI service (Railway)
+```bash
+# API (run from a folder containing apps/api contents)
+railway up -s VetPulse
 
-### AI Service
-Deploy as a separate service, mounting model weights to `/app/model`.
+# AI service
+railway up -s ai-service
+```
+
+### Database
+Migrations run automatically on API boot (`prisma migrate deploy`). Seed once
+with `npx prisma db seed`.
 
 ## License
 
